@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "splendor-game"
+version = "0.1.0"
+description = "璀璨宝石 (Splendor) 桌游规则引擎 + CLI + 简单 AI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "bo-ke" }]
+keywords = ["splendor", "board-game", "game-engine", "璀璨宝石"]
+
+[project.scripts]
+splendor = "splendor.cli:main"
+
+[tool.setuptools]
+packages = ["splendor"]
+
+[tool.setuptools.package-data]
+splendor = ["data/*.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

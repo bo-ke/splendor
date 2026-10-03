@@ -1,0 +1,97 @@
+[
+ {
+  "id": "n01",
+  "name": "白黑",
+  "points": 3,
+  "requirement": {
+   "white": 4,
+   "black": 4
+  }
+ },
+ {
+  "id": "n02",
+  "name": "白蓝",
+  "points": 3,
+  "requirement": {
+   "white": 4,
+   "blue": 4
+  }
+ },
+ {
+  "id": "n03",
+  "name": "蓝绿",
+  "points": 3,
+  "requirement": {
+   "blue": 4,
+   "green": 4
+  }
+ },
+ {
+  "id": "n04",
+  "name": "绿红",
+  "points": 3,
+  "requirement": {
+   "green": 4,
+   "red": 4
+  }
+ },
+ {
+  "id": "n05",
+  "name": "红黑",
+  "points": 3,
+  "requirement": {
+   "red": 4,
+   "black": 4
+  }
+ },
+ {
+  "id": "n06",
+  "name": "白红黑",
+  "points": 3,
+  "requirement": {
+   "white": 3,
+   "red": 3,
+   "black": 3
+  }
+ },
+ {
+  "id": "n07",
+  "name": "白蓝黑",
+  "points": 3,
+  "requirement": {
+   "white": 3,
+   "blue": 3,
+   "black": 3
+  }
+ },
+ {
+  "id": "n08",
+  "name": "白蓝绿",
+  "points": 3,
+  "requirement": {
+   "white": 3,
+   "blue": 3,
+   "green": 3
+  }
+ },
+ {
+  "id": "n09",
+  "name": "蓝绿红",
+  "points": 3,
+  "requirement": {
+   "blue": 3,
+   "green": 3,
+   "red": 3
+  }
+ },
+ {
+  "id": "n10",
+  "name": "绿红黑",
+  "points": 3,
+  "requirement": {
+   "green": 3,
+   "red": 3,
+   "black": 3
+  }
+ }
+]
