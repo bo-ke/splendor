@@ -1,0 +1,83 @@
+.card {
+  position: relative;
+  box-sizing: border-box;
+  width: 128rpx;
+  height: 176rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  border: 3rpx solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+.card.size-small { width: 108rpx; height: 150rpx; }
+.card.size-large { width: 240rpx; height: 324rpx; border-radius: 20rpx; }
+
+.card.selected { transform: translateY(-8rpx); border-color: var(--accent); }
+.card.affordable { border-color: #7cf29a; box-shadow: 0 0 14rpx rgba(124, 242, 154, 0.8); }
+.card.empty { background: rgba(255, 255, 255, 0.05); border: 3rpx dashed rgba(255, 255, 255, 0.15); box-shadow: none; }
+
+.card-white { background: linear-gradient(160deg, #fbfbf7, #d6d4cb); }
+.card-blue { background: linear-gradient(160deg, #5d92ea, #1f4f9e); }
+.card-green { background: linear-gradient(160deg, #5cc285, #1d6b3d); }
+.card-red { background: linear-gradient(160deg, #ec6a6a, #962424); }
+.card-black { background: linear-gradient(160deg, #6a5d60, #241d1e); }
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44rpx;
+  padding: 0 10rpx;
+  background: rgba(255, 255, 255, 0.55);
+}
+.size-small .head { height: 38rpx; padding: 0 8rpx; }
+.size-large .head { height: 80rpx; padding: 0 18rpx; }
+
+.pts { font-size: 34rpx; font-weight: 800; color: #222; }
+.size-small .pts { font-size: 28rpx; }
+.size-large .pts { font-size: 60rpx; }
+
+.gem {
+  width: 22rpx;
+  height: 22rpx;
+  margin-right: 4rpx;
+  transform: rotate(45deg);
+  border: 2rpx solid rgba(0, 0, 0, 0.35);
+}
+.size-large .gem { width: 40rpx; height: 40rpx; }
+
+.cost {
+  position: absolute;
+  left: 8rpx;
+  bottom: 8rpx;
+  display: flex;
+  flex-direction: column-reverse;
+}
+.size-large .cost { left: 16rpx; bottom: 16rpx; }
+
+/* 4 种成本也要放得下：4 × (28 + 3) + 8 < 176 - 44 */
+.pip {
+  box-sizing: border-box;
+  width: 28rpx;
+  height: 28rpx;
+  line-height: 24rpx;
+  margin-top: 3rpx;
+  border-radius: 50%;
+  font-size: 20rpx;
+  font-weight: 700;
+  text-align: center;
+  border: 2rpx solid rgba(0, 0, 0, 0.35);
+}
+.size-small .pip { width: 23rpx; height: 23rpx; line-height: 19rpx; font-size: 16rpx; margin-top: 2rpx; }
+.size-large .pip { width: 48rpx; height: 48rpx; line-height: 44rpx; font-size: 30rpx; margin-top: 6rpx; }
+
+.gold-tag {
+  position: absolute;
+  right: 6rpx;
+  bottom: 6rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+  font-size: 18rpx;
+  background: var(--gem-gold);
+  color: #3a2a00;
+}

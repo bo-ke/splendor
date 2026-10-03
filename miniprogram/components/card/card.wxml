@@ -1,0 +1,11 @@
+<view wx:if="{{card}}" class="card card-{{card.bonus}} size-{{size}} {{selected ? 'selected' : ''}} {{highlight && card.affordable ? 'affordable' : ''}}">
+  <view class="head">
+    <text class="pts">{{card.points ? card.points : ''}}</text>
+    <view class="gem bg-{{card.bonus}}"></view>
+  </view>
+  <view class="cost">
+    <view wx:for="{{card.cost}}" wx:key="color" class="pip bg-{{item.color}}">{{item.n}}</view>
+  </view>
+  <view wx:if="{{highlight && card.affordable && card.goldNeeded}}" class="gold-tag">金×{{card.goldNeeded}}</view>
+</view>
+<view wx:else class="card empty size-{{size}}"></view>

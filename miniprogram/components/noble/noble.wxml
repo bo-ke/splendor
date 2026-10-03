@@ -1,0 +1,6 @@
+<view wx:if="{{noble}}" class="noble size-{{size}}">
+  <text class="pts">{{noble.points}}</text>
+  <view class="req">
+    <view wx:for="{{noble.req}}" wx:key="color" class="bar bg-{{item.color}}">{{item.n}}</view>
+  </view>
+</view>

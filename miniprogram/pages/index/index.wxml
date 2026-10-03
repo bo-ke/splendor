@@ -1,0 +1,59 @@
+<view class="page">
+  <view class="hero">
+    <view class="logo">
+      <view class="g bg-white"></view>
+      <view class="g bg-blue"></view>
+      <view class="g bg-green"></view>
+      <view class="g bg-red"></view>
+      <view class="g bg-black"></view>
+    </view>
+    <view class="title">璀璨宝石</view>
+    <view class="sub">Splendor · 收集宝石，赢得贵族青睐</view>
+  </view>
+
+  <view wx:if="{{hasSave}}" class="btn primary wide" hover-class="btn-hover" bindtap="onResume">继续上局</view>
+
+  <view class="section">
+    <view class="label">玩家人数</view>
+    <view class="seg">
+      <view wx:for="{{[2, 3, 4]}}" wx:key="*this" class="seg-item {{count === item ? 'on' : ''}}" data-n="{{item}}" bindtap="onCount">{{item}} 人</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="label">座位（按出手顺序）</view>
+    <view wx:for="{{seats}}" wx:if="{{index < count}}" class="seat">
+      <view class="seat-no">{{index + 1}}</view>
+      <input class="seat-name" value="{{item.name}}" maxlength="8" placeholder="名字" data-i="{{index}}" bindinput="onName" />
+      <view class="type {{item.isAI ? 'ai' : 'human'}}" data-i="{{index}}" bindtap="onToggleAI">{{item.isAI ? '电脑' : '真人'}}</view>
+    </view>
+    <view class="tip">多名真人时为同屏轮流（传手机）模式。点“真人/电脑”切换。</view>
+  </view>
+
+  <view class="btn {{hasSave ? '' : 'primary'}} wide" hover-class="btn-hover" bindtap="onStart">开始新游戏</view>
+  <view class="link" bindtap="onRules">玩法说明</view>
+</view>
+
+<view wx:if="{{showRules}}" class="mask" bindtap="onRules">
+  <view class="rules" catchtap="noop">
+    <view class="rules-title">玩法说明</view>
+    <scroll-view scroll-y class="rules-body">
+      <view class="h">目标</view>
+      <view class="p">率先达到 15 声望点。有人达到后打完本轮，分最高者胜；平分时购买发展卡较少者胜。</view>
+      <view class="h">每回合选一个动作</view>
+      <view class="p">① 拿 3 枚不同颜色的宝石代币（桌上颜色不足 3 种时拿满剩余种类）。</view>
+      <view class="p">② 拿 2 枚同色代币（该色桌上剩余 ≥ 4 枚时才可）。再次点击已选的代币即可切换。</view>
+      <view class="p">③ 预留 1 张发展卡（场上或盲抽牌堆顶），并获得 1 枚黄金。最多预留 3 张。</view>
+      <view class="p">④ 购买 1 张场上或自己预留的发展卡。黄金可当任意颜色使用。</view>
+      <view class="h">永久加成</view>
+      <view class="p">每张已购发展卡永久提供 1 颗右上角颜色的宝石，自动抵扣之后的购买成本。</view>
+      <view class="h">贵族</view>
+      <view class="p">回合结束时若你的永久加成满足某位贵族的要求，他会自动来访，带来 3 分（每回合至多一位）。</view>
+      <view class="h">代币上限</view>
+      <view class="p">回合结束时手中代币（含黄金）不得超过 10 枚，超出须自选弃回。</view>
+      <view class="h">操作</view>
+      <view class="p">点桌面代币选择、再点“确认拿取”；点卡牌弹出购买 / 预留；点左侧牌堆可盲抽预留。买得起的卡会以绿色光边提示。</view>
+    </scroll-view>
+    <view class="btn primary wide" hover-class="btn-hover" bindtap="onRules">知道了</view>
+  </view>
+</view>
