@@ -1,5 +1,5 @@
 /**
- * 璀璨宝石规则引擎（JS 版，移植自 splendor/game.py + player.py）。
+ * 「矿石」规则引擎（JS 版，移植自 splendor/game.py + player.py）。
  *
  * 与 Python 版的区别：
  * - 状态是纯 JSON 对象（state），可直接 setData / 存进本地缓存，并用 new Game(state) 恢复。
@@ -8,7 +8,7 @@
  * - 拿不同色代币时须拿满 min(3, 桌上有货的颜色数) 枚（官方规则）。
  */
 
-const { CARDS, NOBLES } = require('./data');
+const { CARDS, NOBLES, NOBLE_TITLES } = require('./data');
 
 const COLORS = ['white', 'blue', 'green', 'red', 'black'];
 const GOLD = 'gold';
@@ -126,7 +126,7 @@ class Game {
    */
   static create(seats, seed) {
     const n = seats.length;
-    if (n < 2 || n > 4) throw new Error('璀璨宝石支持 2–4 人');
+    if (n < 2 || n > 4) throw new Error('支持 2–4 人');
     if (seed === undefined || seed === null) seed = Math.floor(Math.random() * 2147483647);
 
     const state = {
@@ -162,7 +162,9 @@ class Game {
       state.decks[tier - 1] = deck;
     });
 
-    state.nobles = shuffle(state, clone(NOBLES)).slice(0, n + 1);
+    state.nobles = shuffle(state, clone(NOBLES))
+      .slice(0, n + 1)
+      .map((nb) => Object.assign(nb, { title: NOBLE_TITLES[nb.id] || nb.name }));
     const game = new Game(state);
     game._log(`开局：${n} 名玩家，先到 ${WINNING_SCORE} 分者触发最后一轮。`);
     return game;
@@ -237,15 +239,15 @@ class Game {
     this._requirePhase('play');
     const s = this.state;
     if (!Array.isArray(colors) || new Set(colors).size !== colors.length) {
-      throw new IllegalMove('拿取的代币颜色必须各不相同');
+      throw new IllegalMove('拿取的矿石必须各不相同');
     }
     colors.forEach((c) => {
-      if (COLORS.indexOf(c) < 0) throw new IllegalMove(`不能直接拿 ${COLOR_NAMES[c] || c} 色代币`);
-      if (s.tokens[c] <= 0) throw new IllegalMove(`${COLOR_NAMES[c]}色代币已经拿完了`);
+      if (COLORS.indexOf(c) < 0) throw new IllegalMove(`不能直接拿 ${COLOR_NAMES[c] || c} 色矿石`);
+      if (s.tokens[c] <= 0) throw new IllegalMove(`${COLOR_NAMES[c]}色矿石已经拿完了`);
     });
     const need = this.requiredDistinct();
-    if (need === 0) throw new IllegalMove('桌上已没有可拿的宝石代币');
-    if (colors.length !== need) throw new IllegalMove(`请选择 ${need} 种不同颜色的代币`);
+    if (need === 0) throw new IllegalMove('桌上已没有可拿的矿石');
+    if (colors.length !== need) throw new IllegalMove(`请选择 ${need} 种不同的矿石`);
 
     const p = this.current;
     colors.forEach((c) => {
@@ -258,7 +260,7 @@ class Game {
 
   takeTwo(color) {
     this._requirePhase('play');
-    if (COLORS.indexOf(color) < 0) throw new IllegalMove('只能拿宝石代币，黄金需通过预留获得');
+    if (COLORS.indexOf(color) < 0) throw new IllegalMove('只能拿矿石，黄金需通过预留获得');
     if (!this.canTakeTwo(color)) throw new IllegalMove('该色剩余 ≥ 4 枚时才能拿 2 枚同色');
     const p = this.current;
     this.state.tokens[color] -= 2;
@@ -296,7 +298,7 @@ class Game {
       fromReserve = !!card;
     }
     if (!card) throw new IllegalMove('场上和你的预留区都没有这张卡');
-    if (!canAfford(p, card)) throw new IllegalMove('宝石不足，买不起');
+    if (!canAfford(p, card)) throw new IllegalMove('矿石不足，买不起');
 
     // 结算：先用永久加成折抵，再用普通代币，不足部分用黄金
     let goldUsed = 0;
@@ -332,11 +334,11 @@ class Game {
   discard(color) {
     this._requirePhase('discard');
     const p = this.current;
-    if (!(p.tokens[color] > 0)) throw new IllegalMove('你没有这种代币');
+    if (!(p.tokens[color] > 0)) throw new IllegalMove('你没有这种矿石');
     p.tokens[color] -= 1;
     this.state.tokens[color] += 1;
     if (tokenCount(p) <= MAX_TOKENS) {
-      this._log(`${p.name} 弃回代币至 ${MAX_TOKENS} 枚`);
+      this._log(`${p.name} 弃回矿石至 ${MAX_TOKENS} 份`);
       this._endTurn();
     }
   }
@@ -353,7 +355,7 @@ class Game {
   _requirePhase(phase) {
     if (this.state.phase === 'over') throw new IllegalMove('游戏已结束');
     if (this.state.phase !== phase) {
-      throw new IllegalMove(phase === 'play' ? '请先弃回多余的代币' : '现在不需要弃代币');
+      throw new IllegalMove(phase === 'play' ? '请先弃回多余的矿石' : '现在不需要弃回矿石');
     }
   }
 
@@ -391,7 +393,7 @@ class Game {
     if (noble) {
       this.state.nobles.splice(this.state.nobles.indexOf(noble), 1);
       p.nobles.push(noble);
-      this._log(`贵族「${noble.name}」拜访了 ${p.name}，+${noble.points} 分`);
+      this._log(`${noble.title || noble.name} 拜访了 ${p.name}，+${noble.points} 分`);
     }
   }
 

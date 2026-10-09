@@ -17,7 +17,7 @@ Page({
     seats: defaultSeats(),
     hasSave: false,
     showRules: false,
-    gems: ['white', 'blue', 'green', 'red', 'black'],
+    ores: ['white', 'blue', 'green', 'red', 'black'],
   },
 
   onLoad() {
@@ -90,6 +90,6 @@ Page({
   noop() {},
 
   onShareAppMessage() {
-    return { title: '来一局璀璨宝石吧！', path: '/pages/index/index' };
+    return { title: '来一局《矿石》吧！', path: '/pages/index/index' };
   },
 });

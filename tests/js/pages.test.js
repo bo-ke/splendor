@@ -240,7 +240,7 @@ test('对局页：代币超限进入弃牌阶段；可从存档继续', () => {
     assert.equal(page.data.view.phase, 'discard');
     assert.equal(page.data.view.discardNeeded, 2);
     page.onTapBank(ev({ color: 'red' }));
-    assert.equal(env.toasts.pop(), '请先点击你自己的代币弃回');
+    assert.equal(env.toasts.pop(), '请先点击你自己的矿石弃回');
     page.onTapMyToken(ev({ color: 'white' }));
     page.onTapMyToken(ev({ color: 'white' }));
     assert.equal(page.data.view.phase, 'play');

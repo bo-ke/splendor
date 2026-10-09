@@ -36,6 +36,8 @@ function cardView(card, player) {
     cost: costList(card.cost),
     affordable: false,
     goldNeeded: 0,
+    // 奇数编号的卡左右镜像插画，同色同层的卡看起来不至于完全一样
+    flip: parseInt(String(card.id).replace(/\D/g, ''), 10) % 2 === 1,
   };
   if (player) {
     v.affordable = canAfford(player, card);
@@ -47,7 +49,7 @@ function cardView(card, player) {
 function nobleView(noble) {
   return {
     id: noble.id,
-    name: noble.name,
+    name: noble.title || noble.name,
     points: noble.points,
     req: costList(noble.requirement),
   };
@@ -180,7 +182,7 @@ function togglePick(game, picks, color) {
   const next = Object.assign({}, picks);
   const chosen = Object.keys(next).filter((c) => next[c] > 0);
   if (color === 'gold') return { error: '黄金只能通过预留卡牌获得' };
-  if (game.state.tokens[color] <= 0) return { error: `${COLOR_NAMES[color]}色代币已经拿完了` };
+  if (game.state.tokens[color] <= 0) return { error: `${COLOR_NAMES[color]}色矿石已经拿完了` };
 
   if (next[color]) {
     if (chosen.length === 1 && next[color] === 1 && game.canTakeTwo(color)) {

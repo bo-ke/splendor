@@ -1,22 +1,24 @@
-/* ================= 全局主题：深蓝丝绒 + 金色点缀 ================= */
+/* ================= 全局主题：胡桃木、羊皮纸与烫金 ================= */
 page {
-  --bg-top: #1c2846;
-  --bg: #131b31;
-  --bg-deep: #0c1222;
-  --panel: rgba(255, 255, 255, 0.06);
-  --panel-solid: #1e2a4a;
-  --panel-2: #283863;
-  --line: rgba(255, 255, 255, 0.1);
-  --text: #f4efe2;
-  --muted: #9aa6c2;
-  --gold: #f2c35b;
-  --gold-hi: #ffe39a;
-  --gold-lo: #b8801c;
+  --bg-top: #2a1e18;
+  --bg: #1b1412;
+  --bg-deep: #0f0b0a;
+  --panel: rgba(255, 236, 200, 0.06);
+  --panel-solid: #2e221b;
+  --panel-2: #3e2d22;
+  --line: rgba(255, 226, 180, 0.13);
+  --text: #f3e7cf;
+  --muted: #b5a184;
+  --gold: #e2b65a;
+  --gold-hi: #ffe1a0;
+  --gold-lo: #9c6a1c;
+  --parchment: #efe0bf;
+  --ink: #3a2414;
   --danger: #ef6a5c;
   --ok: #6fe39a;
 
   min-height: 100%;
-  background: radial-gradient(ellipse 120% 70% at 50% 0%, #26365f 0%, var(--bg) 55%, var(--bg-deep) 100%);
+  background: radial-gradient(ellipse 120% 70% at 50% 0%, #3a2a20 0%, var(--bg) 55%, var(--bg-deep) 100%);
   background-color: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
@@ -49,8 +51,8 @@ page {
   font-weight: 600;
   letter-spacing: 2rpx;
   color: var(--text);
-  background: linear-gradient(180deg, #34477a, #25345c);
-  border: 1rpx solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, #5a3e2a, #3a2618);
+  border: 1rpx solid rgba(255, 220, 160, 0.22);
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.15), 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
 }
 .btn.primary {
@@ -94,7 +96,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(5, 9, 20, 0.66);
+  background: rgba(10, 6, 4, 0.7);
   animation: fade-in 0.18s ease-out;
 }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -106,9 +108,13 @@ page {
   padding: 40rpx 36rpx 36rpx;
   box-sizing: border-box;
   border-radius: 28rpx;
-  background: linear-gradient(180deg, #24335a, #182340);
-  border: 1rpx solid rgba(242, 195, 91, 0.35);
+  background: linear-gradient(180deg, #3a2a20, #221813);
+  border: 2rpx solid rgba(226, 182, 90, 0.5);
   box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
   animation: pop-in 0.22s ease-out;
 }
 .dialog-title { font-size: 36rpx; font-weight: 700; text-align: center; color: var(--gold-hi); letter-spacing: 4rpx; }
+
+/* 墙纸背景（WXSS 的 background-image 不能用本地图片，所以用 <image> 铺底） */
+.wall { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 0; }
+.page { position: relative; z-index: 1; }

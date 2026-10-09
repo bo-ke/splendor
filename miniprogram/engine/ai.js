@@ -1,6 +1,6 @@
 /**
  * 简单的贪心 AI（移植自 splendor/ai.py）：能买就买（优先高分/高价值），
- * 否则盯住一张目标卡补最急缺的宝石；回合末代币超限时弃掉最不需要的颜色。
+ * 否则盯住一张目标卡补最急缺的矿石；回合末代币超限时弃掉最不需要的颜色。
  */
 
 const { COLORS, GOLD, bonus, canAfford, qualifiesFor } = require('./game');
@@ -111,7 +111,7 @@ function act(game, p) {
     return;
   }
 
-  // 3) 桌上没宝石了：预留一张高价值卡吃黄金
+  // 3) 桌上没矿石了：预留一张高价值卡吃黄金
   if (game.canReserve()) {
     for (let tier = 3; tier >= 1; tier--) {
       const card = game.state.board[tier - 1].find((c) => c);

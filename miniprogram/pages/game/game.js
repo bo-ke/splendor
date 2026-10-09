@@ -12,13 +12,14 @@ const {
 
 const AI_DELAY = 900; // 电脑每步的停顿（毫秒），方便看清
 const TIER_LABELS = { 1: 'Ⅰ', 2: 'Ⅱ', 3: 'Ⅲ' };
-const GEM_NAMES = {
-  white: '钻石',
-  blue: '蓝宝石',
-  green: '祖母绿',
-  red: '红宝石',
-  black: '缟玛瑙',
+const ORE_NAMES = {
+  white: '石英',
+  blue: '青金石',
+  green: '孔雀石',
+  red: '朱砂',
+  black: '黑曜石',
 };
+const TIER_NAMES = { 1: '矿脉', 2: '商路', 3: '城邦' };
 
 Page({
   data: {
@@ -67,7 +68,7 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '来一局璀璨宝石吧！', path: '/pages/index/index' };
+    return { title: '来一局《矿石》吧！', path: '/pages/index/index' };
   },
 
   // ---------------------------------------------------------------- 核心
@@ -169,7 +170,7 @@ Page({
   onTapBank(e) {
     if (!this.ensureMyTurn()) return;
     if (this.data.view.phase === 'discard') {
-      wx.showToast({ title: '请先点击你自己的代币弃回', icon: 'none' });
+      wx.showToast({ title: '请先点击你自己的矿石弃回', icon: 'none' });
       return;
     }
     const res = togglePick(this.game, this.data.picks, e.currentTarget.dataset.color);
@@ -214,7 +215,7 @@ Page({
     if (card.affordable) {
       tip = card.goldNeeded ? `买得起 · 需动用 ${card.goldNeeded} 枚黄金` : '买得起';
     } else {
-      tip = `还差 ${plan.short} 颗宝石`;
+      tip = `还差 ${plan.short} 份矿石`;
     }
     const canReserve = source === 'board' && viewer.reserved.length < MAX_RESERVED;
     this.setData({
@@ -226,7 +227,7 @@ Page({
         tip,
         ok: card.affordable,
         plan: plan.rows,
-        title: `${GEM_NAMES[raw.bonus]} · 第 ${raw.tier} 层`,
+        title: `${ORE_NAMES[raw.bonus]} · ${TIER_NAMES[raw.tier]}`,
         desc: `永久 +1 ${COLOR_NAMES[raw.bonus]}${raw.points ? ` · ${raw.points} 声望` : ' · 无声望'}`,
         showBuy: myTurn,
         canBuy: myTurn && card.affordable,
@@ -252,7 +253,7 @@ Page({
         tier,
         tierLabel: TIER_LABELS[tier],
         left,
-        title: `第 ${tier} 层牌堆 · 剩 ${left} 张`,
+        title: `${TIER_NAMES[tier]}牌堆 · 剩 ${left} 张`,
         desc: '从牌堆顶盲抽一张，放入你的预留区',
         tip: this.game.canReserve() ? '' : `最多预留 ${MAX_RESERVED} 张`,
         showBuy: false,

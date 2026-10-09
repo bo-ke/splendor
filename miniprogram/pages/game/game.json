@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "璀璨宝石",
+  "navigationBarTitleText": "矿石",
   "usingComponents": {
     "card": "/components/card/card",
     "noble": "/components/noble/noble"

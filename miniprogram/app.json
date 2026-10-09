@@ -4,10 +4,10 @@
     "pages/game/game"
   ],
   "window": {
-    "navigationBarTitleText": "璀璨宝石",
-    "navigationBarBackgroundColor": "#1f2a44",
+    "navigationBarTitleText": "矿石",
+    "navigationBarBackgroundColor": "#1b1412",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#1f2a44",
+    "backgroundColor": "#1b1412",
     "backgroundTextStyle": "light"
   },
   "style": "v2",

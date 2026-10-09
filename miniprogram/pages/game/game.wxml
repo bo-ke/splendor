@@ -1,3 +1,4 @@
+<image class="wall" src="/assets/art/wall.jpg" mode="aspectFill" />
 <view wx:if="{{view}}" class="page">
   <!-- ============ 对手 ============ -->
   <view class="opps">
@@ -6,7 +7,7 @@
         <view class="avatar av-{{item.hue}}">{{item.initial}}</view>
         <view class="opp-id">
           <text class="opp-name">{{item.name}}</text>
-          <text class="opp-sub {{item.isCurrent ? 'live' : ''}}">{{item.isCurrent ? (item.isAI ? '思考中…' : '回合中') : '预留 ' + item.reservedCount + ' · 代币 ' + item.tokenTotal}}</text>
+          <text class="opp-sub {{item.isCurrent ? 'live' : ''}}">{{item.isCurrent ? (item.isAI ? '思考中…' : '回合中') : '预留 ' + item.reservedCount + ' · 持有 ' + item.tokenTotal}}</text>
         </view>
         <view class="score">
           <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
@@ -19,7 +20,7 @@
           <text class="mini-tok num {{c.tokens ? '' : 'zero'}}">{{c.tokens}}</text>
         </view>
         <view class="mini">
-          <image class="mini-gold" src="/assets/gems/gold.svg" mode="aspectFit" />
+          <image class="mini-gold" src="/assets/art/ores/gold.png" mode="aspectFit" />
           <text class="mini-tok num {{item.gold ? '' : 'zero'}}">{{item.gold}}</text>
         </view>
       </view>
@@ -36,13 +37,13 @@
 
   <!-- ============ 牌桌 ============ -->
   <view class="table">
+    <image class="table-bg" src="/assets/art/table.jpg" mode="scaleToFill" />
     <view class="nobles">
       <view wx:for="{{view.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" /></view>
     </view>
     <view wx:for="{{view.tiers}}" wx:for-item="row" wx:key="tier" class="tier">
       <view class="deck {{row.deckCount ? '' : 'empty'}}" data-tier="{{row.tier}}" bindtap="onTapDeck">
-        <image class="deck-art" src="/assets/backs/tier{{row.tier}}.svg" mode="scaleToFill" />
-        <view class="deck-tier">{{tierLabels[row.tier]}}</view>
+        <image class="deck-art" src="/assets/art/backs/tier{{row.tier}}.jpg" mode="scaleToFill" />
         <view class="deck-count num">{{row.deckCount}}</view>
       </view>
       <view wx:for="{{row.slots}}" wx:for-item="slot" wx:key="key" class="slot" data-id="{{slot.card ? slot.card.id : ''}}" data-source="board" bindtap="onTapCard">
@@ -51,10 +52,10 @@
     </view>
   </view>
 
-  <!-- ============ 宝石库 ============ -->
+  <!-- ============ 矿石库 ============ -->
   <view class="bank">
     <view wx:for="{{view.bank}}" wx:key="color" class="token {{item.picked ? 'picked' : ''}} {{item.count ? '' : 'out'}} {{item.color === 'gold' ? 'is-gold' : ''}}" data-color="{{item.color}}" bindtap="onTapBank">
-      <image class="chip" src="/assets/chips/{{item.color}}.svg" mode="aspectFit" />
+      <image class="chip" src="/assets/art/coins/{{item.color}}.png" mode="aspectFit" />
       <view class="count num">{{item.count}}</view>
       <view wx:if="{{item.picked}}" class="pick-badge num">+{{item.picked}}</view>
     </view>
@@ -66,11 +67,11 @@
       <view class="avatar big av-{{view.me.hue}}">{{view.me.initial}}</view>
       <view class="me-id">
         <text class="me-name">{{view.me.name}}</text>
-        <text class="me-sub {{view.myTurn ? 'live' : ''}}">{{view.myTurn ? (view.phase === 'discard' ? '请弃回多余代币' : '你的回合') : (view.phase === 'over' ? '对局结束' : '等待中')}}</text>
+        <text class="me-sub {{view.myTurn ? 'live' : ''}}">{{view.myTurn ? (view.phase === 'discard' ? '请弃回多余矿石' : '你的回合') : (view.phase === 'over' ? '对局结束' : '等待中')}}</text>
       </view>
       <view class="meter">
         <view class="meter-bar"><view class="meter-fill {{view.me.tokenTotal > 10 ? 'over' : (view.me.tokenTotal >= 8 ? 'high' : '')}}" style="width: {{view.me.tokenPct}}%"></view></view>
-        <text class="meter-text num">代币 {{view.me.tokenTotal}}/10</text>
+        <text class="meter-text num">持有 {{view.me.tokenTotal}}/10</text>
       </view>
       <view class="score big">
         <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
@@ -85,7 +86,7 @@
         </view>
         <view wx:else class="bonus-card wild"><text>万能</text></view>
         <view class="my-token {{item.n ? '' : 'zero'}} {{view.myTurn && view.phase === 'discard' && item.n ? 'can-discard' : ''}}">
-          <image class="my-chip" src="/assets/chips/{{item.color}}.svg" mode="aspectFit" />
+          <image class="my-chip" src="/assets/art/coins/{{item.color}}.png" mode="aspectFit" />
           <view class="count num">{{item.n}}</view>
         </view>
       </view>
@@ -121,7 +122,7 @@
     </view>
   </block>
   <block wx:elif="{{view.phase === 'discard'}}">
-    <text class="bar-text warn">代币超过上限，点击上方你的代币弃回 <text class="num strong">{{view.discardNeeded}}</text> 枚</text>
+    <text class="bar-text warn">持有超过上限，点击上方你的矿石弃回 <text class="num strong">{{view.discardNeeded}}</text> 份</text>
   </block>
   <block wx:elif="{{pickEval.hint}}">
     <text class="bar-text">{{pickEval.hint}}</text>
@@ -131,7 +132,7 @@
   <block wx:else>
     <view class="bar-text">
       <text class="strong">你的回合</text>
-      <text class="bar-hint">点宝石拿取 · 点卡牌购买或预留</text>
+      <text class="bar-hint">点矿石拿取 · 点卡牌购买或预留</text>
     </view>
     <view wx:if="{{view.canPass}}" class="btn" hover-class="btn-hover" bindtap="onPass">跳过</view>
   </block>
@@ -144,15 +145,14 @@
     <view class="sheet-main">
       <card wx:if="{{sheet.kind === 'card'}}" card="{{sheet.card}}" size="large" />
       <view wx:else class="deck big">
-        <image class="deck-art" src="/assets/backs/tier{{sheet.tier}}.svg" mode="scaleToFill" />
-        <view class="deck-tier">{{sheet.tierLabel}}</view>
+        <image class="deck-art" src="/assets/art/backs/tier{{sheet.tier}}.jpg" mode="scaleToFill" />
       </view>
       <view class="sheet-info">
         <view class="sheet-title">{{sheet.title}}</view>
         <view class="sheet-desc">{{sheet.desc}}</view>
         <view wx:if="{{sheet.plan}}" class="plan">
           <view class="plan-row head">
-            <text class="c">成本</text><text class="c">加成</text><text class="c">代币</text><text class="c">黄金</text><text class="c">缺</text>
+            <text class="c">成本</text><text class="c">加成</text><text class="c">手中</text><text class="c">黄金</text><text class="c">缺</text>
           </view>
           <view wx:for="{{sheet.plan}}" wx:key="color" class="plan-row">
             <view class="plan-cell"><view class="pip-s num gem-text gem-bg-{{item.color}}">{{item.cost}}</view></view>
@@ -163,7 +163,7 @@
           </view>
         </view>
         <view wx:if="{{sheet.tip}}" class="sheet-tip {{sheet.ok ? 'ok' : 'bad'}}">{{sheet.tip}}</view>
-        <view wx:if="{{sheet.showReserve}}" class="sheet-note">{{sheet.goldGain ? '预留可额外获得 1 枚黄金' : '黄金已拿完，预留不再获得黄金'}}</view>
+        <view wx:if="{{sheet.showReserve}}" class="sheet-note">{{sheet.goldGain ? '预留可额外获得 1 份黄金' : '黄金已拿完，预留不再获得黄金'}}</view>
       </view>
     </view>
     <view class="sheet-btns">
@@ -181,7 +181,7 @@
       <view class="avatar big av-{{playerSheet.hue}}">{{playerSheet.initial}}</view>
       <view class="pd-id">
         <text class="pd-name">{{playerSheet.name}}</text>
-        <text class="pd-sub">{{playerSheet.isAI ? '电脑' : '玩家'}} · {{playerSheet.cardCount}} 张发展卡 · 代币 {{playerSheet.tokenTotal}}/10</text>
+        <text class="pd-sub">{{playerSheet.isAI ? '电脑' : '玩家'}} · {{playerSheet.cardCount}} 张发展卡 · 持有 {{playerSheet.tokenTotal}}/10</text>
       </view>
       <view class="score big">
         <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
@@ -192,21 +192,21 @@
       <view wx:for="{{playerSheet.cols}}" wx:key="color" class="col">
         <view class="bonus-card gem-bg-{{item.color}} {{item.bonus ? '' : 'zero'}}"><text class="num gem-text">{{item.bonus}}</text></view>
         <view class="my-token {{item.tokens ? '' : 'zero'}}">
-          <image class="my-chip" src="/assets/chips/{{item.color}}.svg" mode="aspectFit" />
+          <image class="my-chip" src="/assets/art/coins/{{item.color}}.png" mode="aspectFit" />
           <view class="count num">{{item.tokens}}</view>
         </view>
       </view>
       <view class="col">
         <view class="bonus-card wild"><text>万能</text></view>
         <view class="my-token {{playerSheet.gold ? '' : 'zero'}}">
-          <image class="my-chip" src="/assets/chips/gold.svg" mode="aspectFit" />
+          <image class="my-chip" src="/assets/art/coins/gold.png" mode="aspectFit" />
           <view class="count num">{{playerSheet.gold}}</view>
         </view>
       </view>
     </view>
     <view class="pd-row">
       <text class="pd-label">预留</text>
-      <image wx:for="{{playerSheet.reservedTiers}}" wx:key="key" class="pd-back" src="/assets/backs/tier{{item.tier}}.svg" mode="scaleToFill" />
+      <image wx:for="{{playerSheet.reservedTiers}}" wx:key="key" class="pd-back" src="/assets/art/backs/tier{{item.tier}}.jpg" mode="scaleToFill" />
       <text wx:if="{{!playerSheet.reservedCount}}" class="pd-none">无</text>
       <text class="pd-label gap">贵族</text>
       <view wx:for="{{playerSheet.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" size="small" /></view>

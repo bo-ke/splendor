@@ -1,4 +1,4 @@
-// 发展卡：左上声望点、右上提供的宝石、左下购买成本
+// 发展卡：油画插画 + 左上声望 + 右上提供的矿石 + 左下购买成本
 Component({
   options: { addGlobalClass: true },
   properties: {

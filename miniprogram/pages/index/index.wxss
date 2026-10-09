@@ -2,25 +2,25 @@
 
 /* ---------------- 标题 ---------------- */
 .hero { text-align: center; padding: 50rpx 0 44rpx; }
-.gems { display: flex; justify-content: center; align-items: flex-end; height: 130rpx; }
-.gem {
-  width: 92rpx;
-  height: 92rpx;
+.ores { display: flex; justify-content: center; align-items: flex-end; height: 130rpx; }
+.ore {
+  width: 96rpx;
+  height: 96rpx;
   margin: 0 6rpx;
   filter: drop-shadow(0 12rpx 12rpx rgba(0, 0, 0, 0.45));
   animation: float 3.2s ease-in-out infinite;
 }
-.gem.g1 { animation-delay: 0.3s; margin-bottom: 18rpx; }
-.gem.g2 { animation-delay: 0.6s; width: 108rpx; height: 108rpx; margin-bottom: 28rpx; }
-.gem.g3 { animation-delay: 0.9s; margin-bottom: 18rpx; }
-.gem.g4 { animation-delay: 1.2s; }
+.ore.g1 { animation-delay: 0.3s; margin-bottom: 18rpx; }
+.ore.g2 { animation-delay: 0.6s; width: 116rpx; height: 116rpx; margin-bottom: 28rpx; }
+.ore.g3 { animation-delay: 0.9s; margin-bottom: 18rpx; }
+.ore.g4 { animation-delay: 1.2s; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10rpx); } }
 
 .title {
   margin-top: 28rpx;
-  font-size: 76rpx;
+  font-size: 96rpx;
   font-weight: 800;
-  letter-spacing: 14rpx;
+  letter-spacing: 20rpx;
   font-family: 'Songti SC', 'STSong', Georgia, serif;
   color: var(--gold);
   background: linear-gradient(180deg, #fff2c4 0%, #f2c35b 55%, #b8801c 100%);
@@ -37,8 +37,8 @@
   padding: 22rpx 28rpx;
   margin-bottom: 28rpx;
   border-radius: 24rpx;
-  background: linear-gradient(90deg, rgba(242, 195, 91, 0.22), rgba(242, 195, 91, 0.05));
-  border: 2rpx solid rgba(242, 195, 91, 0.6);
+  background: linear-gradient(90deg, rgba(226, 182, 90, 0.24), rgba(74, 50, 34, 0.7));
+  border: 2rpx solid rgba(226, 182, 90, 0.6);
 }
 .resume-icon { width: 54rpx; height: 76rpx; border-radius: 8rpx; box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.4); }
 .resume-text { flex: 1; display: flex; flex-direction: column; margin-left: 22rpx; }
@@ -50,9 +50,9 @@
 .panel {
   padding: 30rpx 28rpx 24rpx;
   border-radius: 28rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  border: 2rpx solid var(--line);
-  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, rgba(74, 50, 34, 0.9), rgba(38, 25, 18, 0.94));
+  border: 2rpx solid rgba(180, 138, 68, 0.45);
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.45);
 }
 .label { color: var(--muted); font-size: 24rpx; margin-bottom: 18rpx; letter-spacing: 2rpx; }
 .label.gap { margin-top: 36rpx; }

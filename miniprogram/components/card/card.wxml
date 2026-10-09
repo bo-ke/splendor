@@ -1,8 +1,9 @@
 <view wx:if="{{card}}" class="card size-{{size}} {{selected ? 'selected' : ''}} {{highlight && card.affordable ? 'affordable' : ''}} {{deal ? 'deal' : ''}}">
-  <image class="art" src="/assets/cards/{{card.bonus}}.svg" mode="scaleToFill" />
+  <image class="art {{card.flip ? 'flip' : ''}}" src="/assets/art/cards/{{card.bonus}}{{card.tier}}.jpg" mode="aspectFill" />
+  <view class="frame"></view>
   <view class="band">
     <text class="pts num">{{card.points ? card.points : ''}}</text>
-    <image class="gem" src="/assets/gems/{{card.bonus}}.svg" mode="aspectFit" />
+    <image class="ore" src="/assets/art/ores/{{card.bonus}}.png" mode="aspectFit" />
   </view>
   <view class="cost">
     <view wx:for="{{card.cost}}" wx:key="color" class="pip num gem-text gem-bg-{{item.color}}">{{item.n}}</view>

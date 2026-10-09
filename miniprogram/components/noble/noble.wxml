@@ -1,5 +1,6 @@
 <view wx:if="{{noble}}" class="noble size-{{size}}">
-  <image class="art" src="/assets/noble.svg" mode="scaleToFill" />
+  <image class="art" src="/assets/art/nobles/{{noble.id}}.jpg" mode="aspectFill" />
+  <view class="frame"></view>
   <view class="side">
     <text class="pts num">{{noble.points}}</text>
     <view wx:if="{{size !== 'small'}}" class="req">
