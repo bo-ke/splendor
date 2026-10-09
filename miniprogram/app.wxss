@@ -1,47 +1,114 @@
-/* 全局主题 */
+/* ================= 全局主题：深蓝丝绒 + 金色点缀 ================= */
 page {
-  --bg: #1f2a44;
-  --panel: #2b3a5c;
-  --panel-2: #34466e;
-  --text: #f3f1ea;
-  --muted: #a9b3c9;
-  --accent: #f2c14e;
-  --danger: #e2574c;
+  --bg-top: #1c2846;
+  --bg: #131b31;
+  --bg-deep: #0c1222;
+  --panel: rgba(255, 255, 255, 0.06);
+  --panel-solid: #1e2a4a;
+  --panel-2: #283863;
+  --line: rgba(255, 255, 255, 0.1);
+  --text: #f4efe2;
+  --muted: #9aa6c2;
+  --gold: #f2c35b;
+  --gold-hi: #ffe39a;
+  --gold-lo: #b8801c;
+  --danger: #ef6a5c;
+  --ok: #6fe39a;
 
-  --gem-white: #f5f5f0;
-  --gem-blue: #2f6fd6;
-  --gem-green: #2e9e5b;
-  --gem-red: #d63a3a;
-  --gem-black: #3b3133;
-  --gem-gold: #e8b923;
-
-  background: var(--bg);
+  min-height: 100%;
+  background: radial-gradient(ellipse 120% 70% at 50% 0%, #26365f 0%, var(--bg) 55%, var(--bg-deep) 100%);
+  background-color: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
   font-size: 28rpx;
 }
 
-/* 宝石颜色（背景） */
-.bg-white { background: var(--gem-white); color: #333; }
-.bg-blue { background: var(--gem-blue); color: #fff; }
-.bg-green { background: var(--gem-green); color: #fff; }
-.bg-red { background: var(--gem-red); color: #fff; }
-.bg-black { background: var(--gem-black); color: #fff; }
-.bg-gold { background: var(--gem-gold); color: #3a2a00; }
+/* 数字用衬线体，更有桌游质感 */
+.num { font-family: Georgia, 'Times New Roman', 'Songti SC', serif; font-weight: 700; }
 
+/* 宝石色渐变（成本圆点、加成小卡、贵族要求等共用） */
+.gem-bg-white { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #dfe6ef 50%, #8e9bb0 100%); color: #263043; }
+.gem-bg-blue { background: radial-gradient(circle at 32% 28%, #9cc0ff 0%, #2f6fe0 50%, #0f3378 100%); color: #fff; }
+.gem-bg-green { background: radial-gradient(circle at 32% 28%, #9af0bf 0%, #1fa463 50%, #0a4f2d 100%); color: #fff; }
+.gem-bg-red { background: radial-gradient(circle at 32% 28%, #ffa3ae 0%, #e0263f 50%, #6e0b19 100%); color: #fff; }
+.gem-bg-black { background: radial-gradient(circle at 32% 28%, #a596b3 0%, #4b4253 50%, #120e16 100%); color: #fff; }
+.gem-bg-gold { background: radial-gradient(circle at 32% 28%, #fff1b8 0%, #f5b80a 50%, #7a4f00 100%); color: #3a2600; }
+.gem-text { text-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.75); }
+.gem-bg-white.gem-text, .gem-bg-gold.gem-text { text-shadow: 0 1rpx 0 rgba(255, 255, 255, 0.7); }
+
+/* 按钮 */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 76rpx;
+  box-sizing: border-box;
+  height: 80rpx;
   padding: 0 36rpx;
-  border-radius: 38rpx;
+  border-radius: 40rpx;
   font-size: 28rpx;
   font-weight: 600;
-  background: var(--panel-2);
+  letter-spacing: 2rpx;
   color: var(--text);
+  background: linear-gradient(180deg, #34477a, #25345c);
+  border: 1rpx solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.15), 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
 }
-.btn.primary { background: var(--accent); color: #2a2000; }
-.btn.danger { background: var(--danger); color: #fff; }
-.btn.disabled { opacity: 0.4; }
-.btn-hover { opacity: 0.75; }
+.btn.primary {
+  color: #3a2600;
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 45%, #d99a2b);
+  border-color: rgba(255, 240, 200, 0.6);
+  box-shadow: inset 0 2rpx 0 rgba(255, 255, 255, 0.6), 0 6rpx 16rpx rgba(242, 195, 91, 0.35);
+}
+.btn.ghost { background: transparent; box-shadow: none; }
+.btn.disabled { opacity: 0.38; box-shadow: none; }
+.btn-hover { transform: scale(0.97); opacity: 0.85; }
+
+/* 头像 */
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #fff;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+}
+.av-0 { background: linear-gradient(135deg, #f0bd55, #b9781a); }
+.av-1 { background: linear-gradient(135deg, #6fa2f5, #2a56b8); }
+.av-2 { background: linear-gradient(135deg, #5fd093, #1d7a48); }
+.av-3 { background: linear-gradient(135deg, #f07b8c, #a8293d); }
+
+/* 弹层 */
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 9, 20, 0.66);
+  animation: fade-in 0.18s ease-out;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise-in { from { transform: translateY(60rpx); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pop-in { from { transform: scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.dialog {
+  width: 660rpx;
+  padding: 40rpx 36rpx 36rpx;
+  box-sizing: border-box;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, #24335a, #182340);
+  border: 1rpx solid rgba(242, 195, 91, 0.35);
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
+  animation: pop-in 0.22s ease-out;
+}
+.dialog-title { font-size: 36rpx; font-weight: 700; text-align: center; color: var(--gold-hi); letter-spacing: 4rpx; }

@@ -7,12 +7,20 @@ const {
   COLORS,
   COLOR_NAMES,
   MAX_RESERVED,
+  MAX_TOKENS,
   bonus,
   canAfford,
   goldNeeded,
   points,
   tokenCount,
 } = require('../engine/game');
+
+/** 头像上的字：“电脑·甲”取“甲”，其余取首字。 */
+function avatarChar(name) {
+  const s = String(name || '?');
+  const tail = s.split('·').pop();
+  return Array.from(tail || s)[0];
+}
 
 function costList(cost) {
   return COLORS.filter((c) => cost[c]).map((c) => ({ color: c, n: cost[c] }));
@@ -57,9 +65,27 @@ function playerView(game, p, index) {
     gold: p.tokens.gold,
     cols: COLORS.map((c) => ({ color: c, bonus: bonus(p, c), tokens: p.tokens[c] })),
     reservedCount: p.reserved.length,
+    reservedTiers: p.reserved.map((c, i) => ({ key: i, tier: c.tier })),
     nobleCount: p.nobles.length,
     nobles: p.nobles.map(nobleView),
+    initial: avatarChar(p.name),
+    hue: index % 4, // 头像配色
   };
+}
+
+/** 买某张卡时每种颜色怎么付：加成抵扣 / 代币 / 黄金 / 仍缺。 */
+function paymentPlan(player, card) {
+  let gold = player.tokens.gold;
+  const rows = COLORS.filter((c) => card.cost[c]).map((c) => {
+    const cost = card.cost[c];
+    const byBonus = Math.min(cost, bonus(player, c));
+    const byTokens = Math.min(cost - byBonus, player.tokens[c]);
+    const rest = cost - byBonus - byTokens;
+    const byGold = Math.min(rest, gold);
+    gold -= byGold;
+    return { color: c, name: COLOR_NAMES[c], cost, byBonus, byTokens, byGold, short: rest - byGold };
+  });
+  return { rows, short: rows.reduce((n, r) => n + r.short, 0) };
 }
 
 /**
@@ -80,7 +106,11 @@ function buildView(game, viewer, ui) {
   const tiers = [3, 2, 1].map((tier) => ({
     tier,
     deckCount: s.decks[tier - 1].length,
-    cards: s.board[tier - 1].map((c) => cardView(c, activeHuman)),
+    // key 用卡牌 id：新翻开的卡会重新挂载，从而播放发牌动画
+    slots: s.board[tier - 1].map((c, i) => ({
+      key: c ? c.id : `empty-${tier}-${i}`,
+      card: cardView(c, activeHuman),
+    })),
   }));
 
   const bank = ALL_TOKENS.map((c) => ({
@@ -93,6 +123,7 @@ function buildView(game, viewer, ui) {
   const meView = playerView(game, me, viewer);
   meView.reserved = me.reserved.map((c) => cardView(c, activeHuman));
   meView.emptySlots = Array.from({ length: MAX_RESERVED - me.reserved.length }, (_, i) => i);
+  meView.tokenPct = Math.min(100, (meView.tokenTotal / MAX_TOKENS) * 100);
   // 每列：上方永久加成（发展卡数），下方手中代币；黄金没有加成
   meView.slots = ALL_TOKENS.map((c) => ({
     color: c,
@@ -118,6 +149,7 @@ function buildView(game, viewer, ui) {
     tiers,
     nobles: s.nobles.map(nobleView),
     players: s.players.map((p, i) => playerView(game, p, i)),
+    opponents: s.players.map((p, i) => playerView(game, p, i)).filter((p) => p.index !== viewer),
     me: meView,
     lastLog: last,
   };
@@ -166,4 +198,4 @@ function togglePick(game, picks, color) {
   return { picks: next };
 }
 
-module.exports = { buildView, cardView, evaluatePicks, togglePick };
+module.exports = { avatarChar, buildView, cardView, evaluatePicks, paymentPlan, togglePick };

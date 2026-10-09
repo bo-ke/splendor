@@ -7,5 +7,7 @@ Component({
     selected: { type: Boolean, value: false },
     // 为当前人类玩家高亮“买得起”
     highlight: { type: Boolean, value: false },
+    // 挂载时播放发牌动画
+    deal: { type: Boolean, value: false },
   },
 });

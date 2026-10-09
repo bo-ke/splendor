@@ -1,47 +1,44 @@
 .noble {
   position: relative;
   box-sizing: border-box;
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 12rpx;
-  background: linear-gradient(160deg, #f1dfb5, #b8925a);
-  border: 3rpx solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 14rpx;
+  overflow: hidden;
+  border: 2rpx solid rgba(255, 236, 190, 0.7);
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.45);
 }
-.noble.size-small { width: 72rpx; height: 72rpx; border-radius: 8rpx; }
+.noble.size-small { width: 64rpx; height: 64rpx; border-radius: 10rpx; }
 
-.pts {
-  position: absolute;
-  right: 12rpx;
-  top: 6rpx;
-  font-size: 36rpx;
-  font-weight: 800;
-  color: #3a2a10;
-}
-.size-small .pts { font-size: 24rpx; right: 6rpx; top: 2rpx; }
+.art { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 
-.req {
+.side {
   position: absolute;
-  left: 8rpx;
-  top: 8rpx;
-  bottom: 8rpx;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 38rpx;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  align-items: center;
+  padding-top: 4rpx;
 }
-.size-small .req { left: 4rpx; top: 4rpx; bottom: 4rpx; }
+.size-small .side { width: 24rpx; }
 
-/* 3 种要求也要放得下：3 × (30 + 4) < 120 - 16 */
-.bar {
+.pts { font-size: 26rpx; line-height: 26rpx; color: #4a3008; text-shadow: 0 1rpx 0 rgba(255, 255, 255, 0.7); }
+.size-small .pts { font-size: 20rpx; line-height: 24rpx; }
+
+/* 3 种要求也要放得下：(112 - 边框 4 - 上边距 4) ≥ 26 + 3 × (23 + 2) + 2 */
+.req { margin-top: auto; padding-bottom: 2rpx; display: flex; flex-direction: column; align-items: center; }
+.req-card {
   box-sizing: border-box;
-  width: 30rpx;
-  height: 30rpx;
-  line-height: 26rpx;
-  margin-top: 4rpx;
-  border-radius: 6rpx;
-  font-size: 20rpx;
-  font-weight: 700;
+  width: 23rpx;
+  height: 23rpx;
+  line-height: 20rpx;
+  margin-top: 2rpx;
+  border-radius: 5rpx;
+  font-size: 18rpx;
   text-align: center;
-  border: 2rpx solid rgba(0, 0, 0, 0.3);
+  border: 1.5rpx solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.45);
 }
-.size-small .bar { width: 18rpx; height: 18rpx; line-height: 15rpx; font-size: 13rpx; margin-top: 2rpx; }

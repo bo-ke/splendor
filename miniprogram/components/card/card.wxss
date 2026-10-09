@@ -1,83 +1,109 @@
 .card {
   position: relative;
   box-sizing: border-box;
-  width: 128rpx;
-  height: 176rpx;
-  border-radius: 12rpx;
+  width: 120rpx;
+  height: 168rpx;
+  border-radius: 14rpx;
   overflow: hidden;
-  border: 3rpx solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s;
+  background: #222;
+  border: 2rpx solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.45), inset 0 0 0 1rpx rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s ease-out;
 }
-.card.size-small { width: 108rpx; height: 150rpx; }
-.card.size-large { width: 240rpx; height: 324rpx; border-radius: 20rpx; }
+.card.size-small { width: 96rpx; height: 134rpx; border-radius: 12rpx; }
+.card.size-large { width: 244rpx; height: 340rpx; border-radius: 22rpx; border-width: 3rpx; }
 
-.card.selected { transform: translateY(-8rpx); border-color: var(--accent); }
-.card.affordable { border-color: #7cf29a; box-shadow: 0 0 14rpx rgba(124, 242, 154, 0.8); }
-.card.empty { background: rgba(255, 255, 255, 0.05); border: 3rpx dashed rgba(255, 255, 255, 0.15); box-shadow: none; }
+.card.deal { animation: deal 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+@keyframes deal {
+  0% { opacity: 0; transform: translateY(-40rpx) rotate(-6deg) scale(0.8); }
+  100% { opacity: 1; transform: none; }
+}
 
-.card-white { background: linear-gradient(160deg, #fbfbf7, #d6d4cb); }
-.card-blue { background: linear-gradient(160deg, #5d92ea, #1f4f9e); }
-.card-green { background: linear-gradient(160deg, #5cc285, #1d6b3d); }
-.card-red { background: linear-gradient(160deg, #ec6a6a, #962424); }
-.card-black { background: linear-gradient(160deg, #6a5d60, #241d1e); }
+.card.selected { transform: translateY(-10rpx); border-color: var(--gold-hi); }
+.card.affordable {
+  border-color: #b9ffd0;
+  animation: glow 1.6s ease-in-out infinite;
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 0 2rpx rgba(111, 227, 154, 0.9), 0 0 10rpx rgba(111, 227, 154, 0.5), 0 8rpx 16rpx rgba(0, 0, 0, 0.45); }
+  50% { box-shadow: 0 0 0 4rpx rgba(111, 227, 154, 1), 0 0 26rpx rgba(111, 227, 154, 0.8), 0 8rpx 16rpx rgba(0, 0, 0, 0.45); }
+}
 
-.head {
+.card.empty {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2rpx dashed rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.empty-mark {
+  width: 26rpx;
+  height: 26rpx;
+  transform: rotate(45deg);
+  border: 2rpx solid rgba(255, 255, 255, 0.12);
+}
+
+.art { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+
+.band {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 44rpx;
-  padding: 0 10rpx;
-  background: rgba(255, 255, 255, 0.55);
+  padding: 0 6rpx 0 10rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.68));
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.12);
 }
-.size-small .head { height: 38rpx; padding: 0 8rpx; }
-.size-large .head { height: 80rpx; padding: 0 18rpx; }
+.size-small .band { height: 34rpx; padding: 0 4rpx 0 8rpx; }
+.size-large .band { height: 88rpx; padding: 0 12rpx 0 22rpx; }
 
-.pts { font-size: 34rpx; font-weight: 800; color: #222; }
-.size-small .pts { font-size: 28rpx; }
-.size-large .pts { font-size: 60rpx; }
+.pts { font-size: 36rpx; line-height: 1; color: #1b2032; text-shadow: 0 1rpx 0 #fff; }
+.size-small .pts { font-size: 26rpx; }
+.size-large .pts { font-size: 68rpx; }
 
-.gem {
-  width: 22rpx;
-  height: 22rpx;
-  margin-right: 4rpx;
-  transform: rotate(45deg);
-  border: 2rpx solid rgba(0, 0, 0, 0.35);
-}
-.size-large .gem { width: 40rpx; height: 40rpx; }
+.gem { width: 36rpx; height: 36rpx; filter: drop-shadow(0 2rpx 2rpx rgba(0, 0, 0, 0.35)); }
+.size-small .gem { width: 26rpx; height: 26rpx; }
+.size-large .gem { width: 74rpx; height: 74rpx; }
 
+/* 4 种成本也要放得下：4 × (27 + 3) + 7 < 168 - 44 */
 .cost {
   position: absolute;
-  left: 8rpx;
-  bottom: 8rpx;
+  left: 7rpx;
+  bottom: 7rpx;
   display: flex;
   flex-direction: column-reverse;
 }
 .size-large .cost { left: 16rpx; bottom: 16rpx; }
 
-/* 4 种成本也要放得下：4 × (28 + 3) + 8 < 176 - 44 */
 .pip {
   box-sizing: border-box;
-  width: 28rpx;
-  height: 28rpx;
-  line-height: 24rpx;
+  width: 27rpx;
+  height: 27rpx;
+  line-height: 23rpx;
   margin-top: 3rpx;
   border-radius: 50%;
   font-size: 20rpx;
-  font-weight: 700;
   text-align: center;
-  border: 2rpx solid rgba(0, 0, 0, 0.35);
+  border: 2rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.5);
 }
-.size-small .pip { width: 23rpx; height: 23rpx; line-height: 19rpx; font-size: 16rpx; margin-top: 2rpx; }
-.size-large .pip { width: 48rpx; height: 48rpx; line-height: 44rpx; font-size: 30rpx; margin-top: 6rpx; }
+.size-small .pip { width: 21rpx; height: 21rpx; line-height: 18rpx; font-size: 15rpx; margin-top: 2rpx; border-width: 1.5rpx; }
+.size-large .pip { width: 52rpx; height: 52rpx; line-height: 47rpx; font-size: 32rpx; margin-top: 6rpx; border-width: 3rpx; }
 
-.gold-tag {
+.buy-tag {
   position: absolute;
   right: 6rpx;
   bottom: 6rpx;
-  padding: 2rpx 8rpx;
-  border-radius: 8rpx;
+  padding: 0 10rpx;
+  height: 30rpx;
+  line-height: 30rpx;
+  border-radius: 15rpx;
   font-size: 18rpx;
-  background: var(--gem-gold);
-  color: #3a2a00;
+  font-weight: 700;
+  color: #0d3a1f;
+  background: linear-gradient(180deg, #c8ffd9, #6fe39a);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
 }
+.buy-tag.gold { color: #3a2600; background: linear-gradient(180deg, #fff1b8, #f5b80a); }

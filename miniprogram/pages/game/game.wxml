@@ -1,83 +1,106 @@
 <view wx:if="{{view}}" class="page">
-  <!-- 玩家记分栏 -->
-  <scroll-view scroll-x class="players" enable-flex>
-    <view wx:for="{{view.players}}" wx:key="index" class="pl {{item.isCurrent ? 'cur' : ''}}">
-      <view class="pl-top">
-        <text class="pl-name">{{item.isAI ? '🤖 ' : ''}}{{item.name}}</text>
-        <text class="pl-pts">{{item.points}}</text>
-      </view>
-      <view class="pl-cols">
-        <view wx:for="{{item.cols}}" wx:for-item="c" wx:key="color" class="pl-col">
-          <view class="pl-bonus bg-{{c.color}}">{{c.bonus}}</view>
-          <view class="pl-tok">{{c.tokens}}</view>
+  <!-- ============ 对手 ============ -->
+  <view class="opps">
+    <view wx:for="{{view.opponents}}" wx:key="index" class="opp {{item.isCurrent ? 'cur' : ''}}" data-index="{{item.index}}" bindtap="onTapPlayer">
+      <view class="opp-head">
+        <view class="avatar av-{{item.hue}}">{{item.initial}}</view>
+        <view class="opp-id">
+          <text class="opp-name">{{item.name}}</text>
+          <text class="opp-sub {{item.isCurrent ? 'live' : ''}}">{{item.isCurrent ? (item.isAI ? '思考中…' : '回合中') : '预留 ' + item.reservedCount + ' · 代币 ' + item.tokenTotal}}</text>
         </view>
-        <view class="pl-col">
-          <view class="pl-bonus pl-gold bg-gold">金</view>
-          <view class="pl-tok">{{item.gold}}</view>
+        <view class="score">
+          <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
+          <text class="num">{{item.points}}</text>
         </view>
       </view>
-      <view class="pl-meta">代币 {{item.tokenTotal}} · 预留 {{item.reservedCount}} · 贵族 {{item.nobleCount}}</view>
-    </view>
-  </scroll-view>
-
-  <!-- 状态 / 最近动作 -->
-  <view class="status" bindtap="onShowLog">
-    <text class="round">第 {{view.round}} 轮</text>
-    <text wx:if="{{view.lastRound && view.phase !== 'over'}}" class="last-round">最后一轮</text>
-    <text class="last-log">{{view.lastLog}}</text>
-    <text class="more">记录 ›</text>
-  </view>
-
-  <!-- 贵族 -->
-  <view class="nobles">
-    <noble wx:for="{{view.nobles}}" wx:key="id" noble="{{item}}" />
-  </view>
-
-  <!-- 发展卡：第 3 / 2 / 1 层 -->
-  <view wx:for="{{view.tiers}}" wx:for-item="row" wx:key="tier" class="tier">
-    <view class="deck tier-{{row.tier}} {{row.deckCount ? '' : 'empty'}}" data-tier="{{row.tier}}" bindtap="onTapDeck">
-      <text class="deck-label">{{tierLabels[row.tier]}}</text>
-      <text class="deck-n">{{row.deckCount}}</text>
-    </view>
-    <view wx:for="{{row.cards}}" wx:for-item="card" wx:for-index="ci" wx:key="ci" class="slot" data-id="{{card ? card.id : ''}}" data-source="board" bindtap="onTapCard">
-      <card card="{{card}}" highlight="{{view.myTurn && view.phase === 'play'}}" selected="{{sheet && card && sheet.id === card.id}}" />
+      <view class="opp-gems">
+        <view wx:for="{{item.cols}}" wx:for-item="c" wx:key="color" class="mini">
+          <view class="mini-card num gem-text gem-bg-{{c.color}} {{c.bonus ? '' : 'zero'}}">{{c.bonus}}</view>
+          <text class="mini-tok num {{c.tokens ? '' : 'zero'}}">{{c.tokens}}</text>
+        </view>
+        <view class="mini">
+          <image class="mini-gold" src="/assets/gems/gold.svg" mode="aspectFit" />
+          <text class="mini-tok num {{item.gold ? '' : 'zero'}}">{{item.gold}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
-  <!-- 桌面代币 -->
+  <!-- ============ 最近动作 ============ -->
+  <view class="ribbon" bindtap="onShowLog">
+    <view class="round-pill num">第 {{view.round}} 轮</view>
+    <text wx:if="{{view.lastRound && view.phase !== 'over'}}" class="last-pill">最后一轮</text>
+    <text class="ribbon-text">{{view.lastLog}}</text>
+    <text class="ribbon-more">记录 ›</text>
+  </view>
+
+  <!-- ============ 牌桌 ============ -->
+  <view class="table">
+    <view class="nobles">
+      <view wx:for="{{view.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" /></view>
+    </view>
+    <view wx:for="{{view.tiers}}" wx:for-item="row" wx:key="tier" class="tier">
+      <view class="deck {{row.deckCount ? '' : 'empty'}}" data-tier="{{row.tier}}" bindtap="onTapDeck">
+        <image class="deck-art" src="/assets/backs/tier{{row.tier}}.svg" mode="scaleToFill" />
+        <view class="deck-tier">{{tierLabels[row.tier]}}</view>
+        <view class="deck-count num">{{row.deckCount}}</view>
+      </view>
+      <view wx:for="{{row.slots}}" wx:for-item="slot" wx:key="key" class="slot" data-id="{{slot.card ? slot.card.id : ''}}" data-source="board" bindtap="onTapCard">
+        <card card="{{slot.card}}" deal="{{true}}" highlight="{{view.myTurn && view.phase === 'play'}}" selected="{{sheet && slot.card && sheet.id === slot.card.id}}" />
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 宝石库 ============ -->
   <view class="bank">
-    <view wx:for="{{view.bank}}" wx:key="color" class="chip-wrap" data-color="{{item.color}}" bindtap="onTapBank">
-      <view class="chip bg-{{item.color}} {{item.picked ? 'picked' : ''}} {{item.count ? '' : 'out'}}">{{item.count}}</view>
-      <view wx:if="{{item.picked}}" class="badge">+{{item.picked}}</view>
+    <view wx:for="{{view.bank}}" wx:key="color" class="token {{item.picked ? 'picked' : ''}} {{item.count ? '' : 'out'}} {{item.color === 'gold' ? 'is-gold' : ''}}" data-color="{{item.color}}" bindtap="onTapBank">
+      <image class="chip" src="/assets/chips/{{item.color}}.svg" mode="aspectFit" />
+      <view class="count num">{{item.count}}</view>
+      <view wx:if="{{item.picked}}" class="pick-badge num">+{{item.picked}}</view>
     </view>
   </view>
 
-  <!-- 我的区域 -->
-  <view class="me {{view.myTurn && view.phase === 'discard' ? 'discarding' : ''}} {{view.myTurn ? 'active' : ''}}">
+  <!-- ============ 我 ============ -->
+  <view class="me {{view.myTurn ? 'active' : ''}} {{view.myTurn && view.phase === 'discard' ? 'discarding' : ''}}">
     <view class="me-head">
-      <text class="me-name">{{view.me.name}}</text>
-      <text class="me-pts">{{view.me.points}} 分</text>
-      <text class="me-count {{view.me.tokenTotal > 10 ? 'over' : ''}}">代币 {{view.me.tokenTotal}}/10</text>
-    </view>
-    <view class="me-cols">
-      <view wx:for="{{view.me.slots}}" wx:key="color" class="me-col" data-color="{{item.color}}" bindtap="onTapMyToken">
-        <view wx:if="{{item.bonus >= 0}}" class="me-bonus bg-{{item.color}}">{{item.bonus}}</view>
-        <view wx:else class="me-bonus none"></view>
-        <view class="me-tok bg-{{item.color}} {{item.n ? '' : 'zero'}} {{view.myTurn && view.phase === 'discard' && item.n ? 'can-discard' : ''}}">{{item.n}}</view>
+      <view class="avatar big av-{{view.me.hue}}">{{view.me.initial}}</view>
+      <view class="me-id">
+        <text class="me-name">{{view.me.name}}</text>
+        <text class="me-sub {{view.myTurn ? 'live' : ''}}">{{view.myTurn ? (view.phase === 'discard' ? '请弃回多余代币' : '你的回合') : (view.phase === 'over' ? '对局结束' : '等待中')}}</text>
+      </view>
+      <view class="meter">
+        <view class="meter-bar"><view class="meter-fill {{view.me.tokenTotal > 10 ? 'over' : (view.me.tokenTotal >= 8 ? 'high' : '')}}" style="width: {{view.me.tokenPct}}%"></view></view>
+        <text class="meter-text num">代币 {{view.me.tokenTotal}}/10</text>
+      </view>
+      <view class="score big">
+        <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
+        <text class="num">{{view.me.points}}</text>
       </view>
     </view>
-    <view class="me-legend">上：已购发展卡（永久加成） 下：手中代币</view>
-    <view class="me-bottom">
-      <view class="me-res">
+
+    <view class="me-cols">
+      <view wx:for="{{view.me.slots}}" wx:key="color" class="col" data-color="{{item.color}}" bindtap="onTapMyToken">
+        <view wx:if="{{item.bonus >= 0}}" class="bonus-card gem-bg-{{item.color}} {{item.bonus ? '' : 'zero'}}">
+          <text class="num gem-text">{{item.bonus}}</text>
+        </view>
+        <view wx:else class="bonus-card wild"><text>万能</text></view>
+        <view class="my-token {{item.n ? '' : 'zero'}} {{view.myTurn && view.phase === 'discard' && item.n ? 'can-discard' : ''}}">
+          <image class="my-chip" src="/assets/chips/{{item.color}}.svg" mode="aspectFit" />
+          <view class="count num">{{item.n}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="me-foot">
+      <view class="res">
         <view wx:for="{{view.me.reserved}}" wx:key="id" class="slot" data-id="{{item.id}}" data-source="reserved" bindtap="onTapCard">
           <card card="{{item}}" size="small" highlight="{{view.myTurn && view.phase === 'play'}}" />
         </view>
-        <view wx:for="{{view.me.emptySlots}}" wx:key="*this" wx:for-index="ei" class="slot">
-          <view class="res-empty">预留</view>
-        </view>
+        <view wx:for="{{view.me.emptySlots}}" wx:key="*this" class="res-empty"><text>预留</text></view>
       </view>
-      <view class="me-nobles">
-        <noble wx:for="{{view.me.nobles}}" wx:key="id" noble="{{item}}" size="small" />
+      <view class="my-nobles">
+        <view wx:for="{{view.me.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" size="small" /></view>
+        <view wx:if="{{!view.me.nobles.length}}" class="nobles-empty">贵族</view>
       </view>
     </view>
   </view>
@@ -85,89 +108,157 @@
   <view class="spacer"></view>
 </view>
 
-<!-- 底部操作栏 -->
+<!-- ============ 底部操作栏 ============ -->
 <view wx:if="{{view}}" class="bar">
   <block wx:if="{{view.phase === 'over'}}">
-    <text class="bar-text">游戏结束</text>
+    <text class="bar-text">对局已结束</text>
     <view class="btn primary" hover-class="btn-hover" bindtap="showResult">查看结果</view>
   </block>
   <block wx:elif="{{!view.myTurn}}">
-    <text class="bar-text">{{view.currentIsAI ? view.currentName + ' 思考中…' : '等待 ' + view.currentName}}</text>
+    <view class="bar-text waiting">
+      <text>{{view.currentIsAI ? view.currentName + ' 正在思考' : '等待 ' + view.currentName}}</text>
+      <view class="dots"><view class="dot"></view><view class="dot"></view><view class="dot"></view></view>
+    </view>
   </block>
   <block wx:elif="{{view.phase === 'discard'}}">
-    <text class="bar-text warn">代币超过 10 枚：点击上方你的代币，弃回 {{view.discardNeeded}} 枚</text>
+    <text class="bar-text warn">代币超过上限，点击上方你的代币弃回 <text class="num strong">{{view.discardNeeded}}</text> 枚</text>
   </block>
   <block wx:elif="{{pickEval.hint}}">
     <text class="bar-text">{{pickEval.hint}}</text>
-    <view class="btn" hover-class="btn-hover" bindtap="onClearPicks">清空</view>
-    <view class="btn primary {{pickEval.ok ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onConfirmTake">确认拿取</view>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="onClearPicks">清空</view>
+    <view class="btn primary {{pickEval.ok ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onConfirmTake">拿取</view>
   </block>
   <block wx:else>
-    <text class="bar-text">轮到你：点代币拿取，点卡牌购买 / 预留</text>
+    <view class="bar-text">
+      <text class="strong">你的回合</text>
+      <text class="bar-hint">点宝石拿取 · 点卡牌购买或预留</text>
+    </view>
     <view wx:if="{{view.canPass}}" class="btn" hover-class="btn-hover" bindtap="onPass">跳过</view>
   </block>
 </view>
 
-<!-- 卡牌 / 牌堆操作面板 -->
+<!-- ============ 卡牌 / 牌堆面板 ============ -->
 <view wx:if="{{sheet}}" class="mask bottom" bindtap="onCloseSheet">
   <view class="sheet" catchtap="noop">
+    <view class="grip"></view>
     <view class="sheet-main">
       <card wx:if="{{sheet.kind === 'card'}}" card="{{sheet.card}}" size="large" />
-      <view wx:else class="deck big tier-{{sheet.tier}}">
-        <text class="deck-label">{{sheet.tierLabel}}</text>
-        <text class="deck-n">剩 {{sheet.left}}</text>
+      <view wx:else class="deck big">
+        <image class="deck-art" src="/assets/backs/tier{{sheet.tier}}.svg" mode="scaleToFill" />
+        <view class="deck-tier">{{sheet.tierLabel}}</view>
       </view>
       <view class="sheet-info">
+        <view class="sheet-title">{{sheet.title}}</view>
         <view class="sheet-desc">{{sheet.desc}}</view>
-        <view wx:if="{{sheet.tip}}" class="sheet-tip">{{sheet.tip}}</view>
-        <view wx:if="{{sheet.showReserve}}" class="sheet-tip muted">预留{{sheet.goldGain ? '可获得 1 枚黄金' : '（黄金已拿完，不会获得黄金）'}}</view>
+        <view wx:if="{{sheet.plan}}" class="plan">
+          <view class="plan-row head">
+            <text class="c">成本</text><text class="c">加成</text><text class="c">代币</text><text class="c">黄金</text><text class="c">缺</text>
+          </view>
+          <view wx:for="{{sheet.plan}}" wx:key="color" class="plan-row">
+            <view class="plan-cell"><view class="pip-s num gem-text gem-bg-{{item.color}}">{{item.cost}}</view></view>
+            <text class="c num {{item.byBonus ? '' : 'dim'}}">{{item.byBonus || '·'}}</text>
+            <text class="c num {{item.byTokens ? '' : 'dim'}}">{{item.byTokens || '·'}}</text>
+            <text class="c num {{item.byGold ? 'gold' : 'dim'}}">{{item.byGold || '·'}}</text>
+            <text class="c num {{item.short ? 'bad' : 'dim'}}">{{item.short || '·'}}</text>
+          </view>
+        </view>
+        <view wx:if="{{sheet.tip}}" class="sheet-tip {{sheet.ok ? 'ok' : 'bad'}}">{{sheet.tip}}</view>
+        <view wx:if="{{sheet.showReserve}}" class="sheet-note">{{sheet.goldGain ? '预留可额外获得 1 枚黄金' : '黄金已拿完，预留不再获得黄金'}}</view>
       </view>
     </view>
     <view class="sheet-btns">
-      <view wx:if="{{sheet.showBuy}}" class="btn primary {{sheet.canBuy ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onSheetBuy">购买</view>
+      <view class="btn ghost" hover-class="btn-hover" bindtap="onCloseSheet">{{sheet.showBuy || sheet.showReserve ? '取消' : '关闭'}}</view>
       <view wx:if="{{sheet.showReserve}}" class="btn {{sheet.canReserve ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onSheetReserve">预留</view>
-      <view class="btn" hover-class="btn-hover" bindtap="onCloseSheet">{{sheet.showBuy || sheet.showReserve ? '取消' : '关闭'}}</view>
+      <view wx:if="{{sheet.showBuy}}" class="btn primary {{sheet.canBuy ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onSheetBuy">购买</view>
     </view>
   </view>
 </view>
 
-<!-- 同屏多人：交接手机 -->
+<!-- ============ 对手详情 ============ -->
+<view wx:if="{{playerSheet}}" class="mask" bindtap="onClosePlayer">
+  <view class="dialog player-dialog" catchtap="noop">
+    <view class="pd-head">
+      <view class="avatar big av-{{playerSheet.hue}}">{{playerSheet.initial}}</view>
+      <view class="pd-id">
+        <text class="pd-name">{{playerSheet.name}}</text>
+        <text class="pd-sub">{{playerSheet.isAI ? '电脑' : '玩家'}} · {{playerSheet.cardCount}} 张发展卡 · 代币 {{playerSheet.tokenTotal}}/10</text>
+      </view>
+      <view class="score big">
+        <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
+        <text class="num">{{playerSheet.points}}</text>
+      </view>
+    </view>
+    <view class="pd-cols">
+      <view wx:for="{{playerSheet.cols}}" wx:key="color" class="col">
+        <view class="bonus-card gem-bg-{{item.color}} {{item.bonus ? '' : 'zero'}}"><text class="num gem-text">{{item.bonus}}</text></view>
+        <view class="my-token {{item.tokens ? '' : 'zero'}}">
+          <image class="my-chip" src="/assets/chips/{{item.color}}.svg" mode="aspectFit" />
+          <view class="count num">{{item.tokens}}</view>
+        </view>
+      </view>
+      <view class="col">
+        <view class="bonus-card wild"><text>万能</text></view>
+        <view class="my-token {{playerSheet.gold ? '' : 'zero'}}">
+          <image class="my-chip" src="/assets/chips/gold.svg" mode="aspectFit" />
+          <view class="count num">{{playerSheet.gold}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="pd-row">
+      <text class="pd-label">预留</text>
+      <image wx:for="{{playerSheet.reservedTiers}}" wx:key="key" class="pd-back" src="/assets/backs/tier{{item.tier}}.svg" mode="scaleToFill" />
+      <text wx:if="{{!playerSheet.reservedCount}}" class="pd-none">无</text>
+      <text class="pd-label gap">贵族</text>
+      <view wx:for="{{playerSheet.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" size="small" /></view>
+      <text wx:if="{{!playerSheet.nobleCount}}" class="pd-none">无</text>
+    </view>
+    <view class="btn wide" hover-class="btn-hover" bindtap="onClosePlayer">关闭</view>
+  </view>
+</view>
+
+<!-- ============ 同屏多人：交接手机 ============ -->
 <view wx:if="{{handoff}}" class="mask solid">
   <view class="handoff">
+    <image class="handoff-crown" src="/assets/crown.svg" mode="aspectFit" />
     <view class="handoff-title">轮到 {{handoff.name}}</view>
-    <view class="handoff-sub">请把手机交给 {{handoff.name}}</view>
+    <view class="handoff-sub">请把手机交给 {{handoff.name}}，其他人请回避</view>
     <view class="btn primary wide" hover-class="btn-hover" bindtap="onHandoffReady">我是 {{handoff.name}}，开始</view>
   </view>
 </view>
 
-<!-- 对局记录 -->
+<!-- ============ 对局记录 ============ -->
 <view wx:if="{{showLog}}" class="mask" bindtap="onCloseLog">
   <view class="dialog" catchtap="noop">
     <view class="dialog-title">对局记录</view>
     <scroll-view scroll-y class="log-list">
       <view wx:for="{{logs}}" wx:key="key" class="log-item">
-        <text class="log-round">R{{item.round}}</text>
-        <text>{{item.text}}</text>
+        <text class="log-round num">{{item.round}}</text>
+        <text class="log-text">{{item.text}}</text>
       </view>
     </scroll-view>
     <view class="btn wide" hover-class="btn-hover" bindtap="onCloseLog">关闭</view>
   </view>
 </view>
 
-<!-- 结算 -->
+<!-- ============ 结算 ============ -->
 <view wx:if="{{result}}" class="mask">
-  <view class="dialog">
-    <view class="dialog-title">🏆 {{result.rank[0].name}} 获胜！</view>
+  <view class="dialog result">
+    <image class="result-crown" src="/assets/crown.svg" mode="aspectFit" />
+    <view class="dialog-title">{{result.rank[0].name}} 获胜</view>
     <view class="result-sub">共 {{result.rounds}} 轮</view>
     <view wx:for="{{result.rank}}" wx:key="name" class="rank-row {{index === 0 ? 'first' : ''}}">
-      <text class="rank-place">{{item.place}}</text>
+      <text class="rank-place num">{{item.place}}</text>
+      <view class="avatar av-{{item.hue}}">{{item.initial}}</view>
       <text class="rank-name">{{item.name}}</text>
-      <text class="rank-stat">{{item.points}} 分 · {{item.cards}} 卡 · {{item.nobles}} 贵族</text>
+      <view class="rank-stat">
+        <text class="rank-pts num">{{item.points}}</text>
+        <text class="rank-detail">{{item.cards}} 卡 · {{item.nobles}} 贵族</text>
+      </view>
     </view>
     <view class="btn primary wide" hover-class="btn-hover" bindtap="onRematch">再来一局</view>
     <view class="dialog-actions">
-      <view class="btn" hover-class="btn-hover" bindtap="onCloseResult">看看棋盘</view>
-      <view class="btn" hover-class="btn-hover" bindtap="onHome">返回首页</view>
+      <view class="btn ghost" hover-class="btn-hover" bindtap="onCloseResult">看看牌桌</view>
+      <view class="btn ghost" hover-class="btn-hover" bindtap="onHome">返回首页</view>
     </view>
   </view>
 </view>

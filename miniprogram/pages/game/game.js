@@ -1,10 +1,24 @@
-const { COLORS, COLOR_NAMES, Game, MAX_RESERVED, bonus } = require('../../engine/game');
+const { COLOR_NAMES, Game, MAX_RESERVED } = require('../../engine/game');
 const ai = require('../../engine/ai');
 const storage = require('../../utils/storage');
-const { buildView, cardView, evaluatePicks, togglePick } = require('../../utils/view');
+const {
+  avatarChar,
+  buildView,
+  cardView,
+  evaluatePicks,
+  paymentPlan,
+  togglePick,
+} = require('../../utils/view');
 
 const AI_DELAY = 900; // 电脑每步的停顿（毫秒），方便看清
 const TIER_LABELS = { 1: 'Ⅰ', 2: 'Ⅱ', 3: 'Ⅲ' };
+const GEM_NAMES = {
+  white: '钻石',
+  blue: '蓝宝石',
+  green: '祖母绿',
+  red: '红宝石',
+  black: '缟玛瑙',
+};
 
 Page({
   data: {
@@ -12,6 +26,7 @@ Page({
     picks: {},
     pickEval: { ok: false, hint: '' },
     sheet: null, // 卡牌/牌堆操作面板
+    playerSheet: null, // 对手详情
     handoff: null, // 同屏多人：传手机遮罩
     showLog: false,
     logs: [],
@@ -193,18 +208,13 @@ Page({
 
     const myTurn = this.data.view.myTurn && this.data.view.phase === 'play';
     const card = cardView(raw, viewer);
-    // 还差哪些宝石（扣除加成与手中代币后）
-    const short = COLORS.map((c) => ({
-      color: c,
-      name: COLOR_NAMES[c],
-      n: Math.max(0, (raw.cost[c] || 0) - bonus(viewer, c) - viewer.tokens[c]),
-    })).filter((x) => x.n > 0);
-
+    // 每种颜色怎么付：加成 / 代币 / 黄金 / 仍缺
+    const plan = paymentPlan(viewer, raw);
     let tip = '';
     if (card.affordable) {
-      tip = card.goldNeeded ? `买得起，需动用 ${card.goldNeeded} 枚黄金` : '买得起';
+      tip = card.goldNeeded ? `买得起 · 需动用 ${card.goldNeeded} 枚黄金` : '买得起';
     } else {
-      tip = `还差 ${short.map((x) => x.name + x.n).join(' ')}（黄金 ${viewer.tokens.gold} 枚可抵）`;
+      tip = `还差 ${plan.short} 颗宝石`;
     }
     const canReserve = source === 'board' && viewer.reserved.length < MAX_RESERVED;
     this.setData({
@@ -214,7 +224,10 @@ Page({
         source,
         card,
         tip,
-        desc: `提供永久${COLOR_NAMES[raw.bonus]}宝石${raw.points ? ` · ${raw.points} 分` : ''}`,
+        ok: card.affordable,
+        plan: plan.rows,
+        title: `${GEM_NAMES[raw.bonus]} · 第 ${raw.tier} 层`,
+        desc: `永久 +1 ${COLOR_NAMES[raw.bonus]}${raw.points ? ` · ${raw.points} 声望` : ' · 无声望'}`,
         showBuy: myTurn,
         canBuy: myTurn && card.affordable,
         showReserve: myTurn && source === 'board',
@@ -239,7 +252,8 @@ Page({
         tier,
         tierLabel: TIER_LABELS[tier],
         left,
-        desc: `从第 ${tier} 层牌堆顶盲抽一张预留`,
+        title: `第 ${tier} 层牌堆 · 剩 ${left} 张`,
+        desc: '从牌堆顶盲抽一张，放入你的预留区',
         tip: this.game.canReserve() ? '' : `最多预留 ${MAX_RESERVED} 张`,
         showBuy: false,
         showReserve: true,
@@ -266,6 +280,16 @@ Page({
 
   onCloseSheet() {
     this.setData({ sheet: null });
+  },
+
+  onTapPlayer(e) {
+    const i = Number(e.currentTarget.dataset.index);
+    const p = this.data.view.players[i];
+    if (p) this.setData({ playerSheet: p });
+  },
+
+  onClosePlayer() {
+    this.setData({ playerSheet: null });
   },
 
   onTapMyToken(e) {
@@ -309,6 +333,8 @@ Page({
         cards: r.cards,
         nobles: p.nobles.length,
         isAI: p.isAI,
+        initial: avatarChar(r.name),
+        hue: r.index % 4,
       };
     });
     this.setData({ result: { rank, rounds: g.state.round - 1 } });

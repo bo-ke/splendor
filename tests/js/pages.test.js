@@ -77,7 +77,7 @@ function humanMove(page) {
     return 'discard';
   }
   const board = [];
-  v.tiers.forEach((r) => r.cards.forEach((c) => c && board.push({ c, source: 'board' })));
+  v.tiers.forEach((r) => r.slots.forEach(({ card: c }) => c && board.push({ c, source: 'board' })));
   v.me.reserved.forEach((c) => board.push({ c, source: 'reserved' }));
   const buyable = board.filter((x) => x.c.affordable).sort((a, b) => b.c.points - a.c.points)[0];
   if (buyable) {

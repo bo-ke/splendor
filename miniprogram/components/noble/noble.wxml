@@ -1,6 +1,9 @@
 <view wx:if="{{noble}}" class="noble size-{{size}}">
-  <text class="pts">{{noble.points}}</text>
-  <view class="req">
-    <view wx:for="{{noble.req}}" wx:key="color" class="bar bg-{{item.color}}">{{item.n}}</view>
+  <image class="art" src="/assets/noble.svg" mode="scaleToFill" />
+  <view class="side">
+    <text class="pts num">{{noble.points}}</text>
+    <view wx:if="{{size !== 'small'}}" class="req">
+      <view wx:for="{{noble.req}}" wx:key="color" class="req-card num gem-text gem-bg-{{item.color}}">{{item.n}}</view>
+    </view>
   </view>
 </view>

@@ -240,3 +240,31 @@ test('AI 自对弈：2–4 人、多个种子均能正常结束且守恒', () =>
     }
   }
 });
+
+test('页面引用的美术资源都存在（否则运行 scripts/gen_miniprogram_assets.py）', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { ALL_TOKENS } = require('../../miniprogram/engine/game');
+  const mp = path.join(__dirname, '../../miniprogram');
+  // 首页的宝石列表 {{item}} 即五种颜色
+  const values = { color: ALL_TOKENS, bonus: COLORS, tier: ['1', '2', '3'], item: COLORS };
+  const walk = (d) =>
+    fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.wxml') ? [path.join(d, e.name)] : []
+    );
+  let checked = 0;
+  for (const file of walk(mp)) {
+    const src = fs.readFileSync(file, 'utf8');
+    for (const [, ref] of src.matchAll(/src="(\/assets\/[^"]+)"/g)) {
+      // 把 {{item.color}} / {{card.bonus}} / {{row.tier}} 之类展开成所有可能取值
+      const m = ref.match(/\{\{(?:[\w]+\.)*(color|bonus|tier|item)\}\}/);
+      const paths = m ? values[m[1]].map((v) => ref.replace(m[0], v)) : [ref];
+      for (const p of paths) {
+        assert.ok(!p.includes('{{'), `无法展开的资源路径 ${ref}（${file}）`);
+        assert.ok(fs.existsSync(path.join(mp, p)), `缺少资源 ${p}（${file}）`);
+        checked++;
+      }
+    }
+  }
+  assert.ok(checked > 20);
+});

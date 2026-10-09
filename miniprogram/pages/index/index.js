@@ -17,6 +17,7 @@ Page({
     seats: defaultSeats(),
     hasSave: false,
     showRules: false,
+    gems: ['white', 'blue', 'green', 'red', 'black'],
   },
 
   onLoad() {

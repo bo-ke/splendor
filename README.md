@@ -62,7 +62,8 @@ except GameOver as e:
 - 🤖 **人机对战**：1 名真人 vs 1–3 个电脑（电脑沿用上面的贪心 AI，JS 移植版）。
 - 👥 **同屏多人**：多名真人轮流传手机，轮到谁先弹出交接遮罩，避免误操作。
 - 💾 **自动存档**：每一步都存到本地缓存，退出后在首页「继续上局」。
-- ✋ **触屏操作**：点代币选择（再点同色切换为拿 2 枚），点卡牌弹出购买 / 预留面板，点牌堆盲抽预留；买得起的卡有绿色光边，还差哪些宝石会直接提示。
+- ✋ **触屏操作**：点代币选择（再点同色切换为拿 2 枚），点卡牌弹出购买 / 预留面板，点牌堆盲抽预留；买得起的卡有绿色光边，面板里逐色列出“加成 / 代币 / 黄金 / 还缺”；点对手可看其详情。
+- 💎 **美术**：刻面宝石（每种颜色切工不同，色弱也能靠形状区分）、筹码式代币、卡面 / 卡背 / 贵族插画均为脚本生成的 SVG。
 - 📏 **完整规则**：在 Python 版基础上补全了「回合末代币超过 10 枚须弃回」和「拿不同色须拿满 3 种（不足 3 种时拿满剩余）」。
 
 **运行**
@@ -79,12 +80,13 @@ miniprogram/
 │   ├── data.js      #   由 scripts/gen_miniprogram_data.py 从 splendor/data/*.json 生成
 │   ├── game.js      #   状态是纯 JSON，可直接 setData / 存档
 │   └── ai.js
+├── assets/          # SVG 美术，由 scripts/gen_miniprogram_assets.py 生成
 ├── utils/           # view.js：状态 → 视图模型；storage.js：本地存档
 ├── components/      # card（发展卡）、noble（贵族）
 └── pages/           # index（开局设置 / 玩法说明）、game（对局）
 ```
 
-修改卡牌数据后运行 `python scripts/gen_miniprogram_data.py` 同步；JS 测试会检查两边是否一致。
+修改卡牌数据后运行 `python scripts/gen_miniprogram_data.py` 同步；调整配色 / 宝石造型后运行 `python scripts/gen_miniprogram_assets.py`。JS 测试会检查数据是否一致、页面引用的资源是否都存在。
 
 **测试**（Node ≥ 18，无需安装依赖）
 
