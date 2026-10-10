@@ -98,6 +98,7 @@
       <view class="score big">
         <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
         <text class="num">{{view.me.points}}</text>
+        <view wx:for="{{gain ? [gain.key] : []}}" wx:key="*this" class="gain num">+{{gain.n}}</view>
       </view>
     </view>
 
@@ -110,6 +111,7 @@
         <view class="my-token {{item.n ? '' : 'zero'}} {{view.myTurn && view.phase === 'discard' && item.n ? 'can-discard' : ''}}">
           <image class="my-chip" src="/assets/art/coins/{{item.color}}.png" mode="aspectFit" />
           <view class="count num">{{item.n}}</view>
+          <view wx:if="{{item.out}}" class="out-badge num">−{{item.out}}</view>
         </view>
       </view>
     </view>
@@ -134,7 +136,13 @@
 
 <!-- ============ 底部操作栏 ============ -->
 <view wx:if="{{view}}" class="bar">
-  <block wx:if="{{view.phase === 'over'}}">
+  <block wx:if="{{syncing}}">
+    <view class="bar-text waiting">
+      <text>{{t.sending}}</text>
+      <view class="dots"><view class="dot"></view><view class="dot"></view><view class="dot"></view></view>
+    </view>
+  </block>
+  <block wx:elif="{{view.phase === 'over'}}">
     <text class="bar-text">{{t.gameOver}}</text>
     <view class="btn primary" hover-class="btn-hover" bindtap="showResult">{{t.results}}</view>
   </block>
@@ -146,11 +154,16 @@
   </block>
   <block wx:elif="{{view.phase === 'discard'}}">
     <text class="bar-text warn">{{view.discardLabel}}</text>
+    <view class="btn ghost" hover-class="btn-hover" bindtap="onClearDiscards">{{t.clear}}</view>
+    <view class="btn primary {{view.discardReady ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onConfirmDiscard">{{t.returnOres}}</view>
   </block>
   <block wx:elif="{{pickEval.hint}}">
     <view class="bar-picks">
       <template is="logIcons" data="{{icons: pickEval.icons}}" />
-      <text class="bar-text">{{pickEval.hint}}</text>
+      <view class="bar-text">
+        <text>{{pickEval.hint}}</text>
+        <text wx:if="{{pickEval.tip}}" class="bar-hint">{{pickEval.tip}}</text>
+      </view>
     </view>
     <view class="btn ghost" hover-class="btn-hover" bindtap="onClearPicks">{{t.clear}}</view>
     <view class="btn primary {{pickEval.ok ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onConfirmTake">{{t.take}}</view>
@@ -247,6 +260,16 @@
       </view>
     </view>
     <view class="btn wide" hover-class="btn-hover" bindtap="onClosePlayer">{{t.close}}</view>
+  </view>
+</view>
+
+<!-- ============ 贵族来访 ============ -->
+<view wx:if="{{celebrate}}" class="celebrate" bindtap="onCloseCelebrate">
+  <view class="celebrate-card">
+    <view class="celebrate-rays"></view>
+    <view class="celebrate-noble"><noble noble="{{celebrate.noble}}" size="large" /></view>
+    <view class="celebrate-text">{{celebrate.text}}</view>
+    <view class="celebrate-pts num">+{{celebrate.points}}</view>
   </view>
 </view>
 

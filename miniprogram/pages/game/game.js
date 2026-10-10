@@ -1,4 +1,4 @@
-const { Game, MAX_RESERVED } = require('../../engine/game');
+const { Game, MAX_RESERVED, points } = require('../../engine/game');
 const ai = require('../../engine/ai');
 const i18n = require('../../utils/i18n');
 const online = require('../../utils/online');
@@ -7,11 +7,22 @@ const {
   avatarChar,
   buildView,
   cardView,
+  discardList,
   evaluatePicks,
   logIcons,
   paymentPlan,
+  toggleDiscard,
   togglePick,
 } = require('../../utils/view');
+
+/** 轻触反馈；不支持的机型静默忽略。 */
+function buzz() {
+  try {
+    if (wx.vibrateShort) wx.vibrateShort({ type: 'light' });
+  } catch (e) {
+    // ignore
+  }
+}
 
 const AI_DELAY = 900; // 电脑每步的停顿（毫秒），方便看清
 const TIER_LABELS = { 1: 'Ⅰ', 2: 'Ⅱ', 3: 'Ⅲ' };
@@ -25,7 +36,11 @@ Page({
   data: {
     view: null,
     picks: {},
+    discards: {}, // 弃牌阶段已选中待弃回的矿石 {color: n}
     pickEval: { ok: false, hint: '' },
+    gain: null, // 分数上涨时在皇冠旁飘一个 +N
+    celebrate: null, // 贵族拜访“我”时的庆祝卡片
+    syncing: false, // 联机提交中
     sheet: null, // 卡牌/牌堆操作面板
     playerSheet: null, // 对手详情
     handoff: null, // 同屏多人：传手机遮罩
@@ -74,6 +89,7 @@ Page({
 
   onUnload() {
     this.clearTimer();
+    if (this.celebrateTimer) clearTimeout(this.celebrateTimer);
     if (this.watcher) {
       this.watcher.close();
       this.watcher = null;
@@ -143,8 +159,11 @@ Page({
   render(patch) {
     const data = Object.assign({}, patch);
     const picks = data.picks || this.data.picks;
+    const discards = data.discards || (this.game.state.phase === 'discard' ? this.data.discards : {});
+    if (this.game.state.phase !== 'discard') data.discards = {};
     data.view = buildView(this.game, this.viewer(), {
       picks,
+      discards,
       locked: this.locked(),
       // 同屏多人刚读档时不知道手机在谁手上，预留卡（可能含盲抽）只露卡背
       hideReserved: this.humans.length > 1 && this.holder === null,
@@ -156,7 +175,44 @@ Page({
       []
     );
     data.pickEval.icons.forEach((icon, i) => (icon.key = i));
+    this.feedback(data);
     this.setData(data);
+  },
+
+  /**
+   * 与上一次渲染比较“我”的变化：轮到我时轻震；得分时飘 +N；贵族来访时弹庆祝卡片。
+   * 同屏多人换人时视角变了，只重置基准、不提示。
+   */
+  feedback(data) {
+    const viewer = this.viewer();
+    const me = this.game.state.players[viewer];
+    const now = { viewer, points: points(me), nobles: me.nobles.length, myTurn: data.view.myTurn };
+    const prev = this.prevMine;
+    this.prevMine = now;
+    if (!prev || prev.viewer !== viewer) return;
+    if (now.myTurn && !prev.myTurn) buzz();
+    if (now.points > prev.points) {
+      data.gain = { key: `${this.game.state.turn}-${now.points}`, n: now.points - prev.points };
+    }
+    if (now.nobles > prev.nobles) {
+      const noble = me.nobles[me.nobles.length - 1];
+      const title = i18n.dict().noble[noble.id] || noble.name;
+      data.celebrate = {
+        noble: { id: noble.id, points: noble.points, req: [] },
+        text: t('fmt.nobleVisit', title),
+        points: noble.points,
+      };
+      buzz();
+      if (this.celebrateTimer) clearTimeout(this.celebrateTimer);
+      this.celebrateTimer = setTimeout(() => {
+        this.celebrateTimer = null;
+        this.setData({ celebrate: null });
+      }, 2400);
+    }
+  },
+
+  onCloseCelebrate() {
+    this.setData({ celebrate: null });
   },
 
   /** 电脑走完一步后，把仍开着的弹层刷新成最新局面，避免显示过期内容。 */
@@ -231,7 +287,7 @@ Page({
       throw e;
     }
     this.persist();
-    this.render({ picks: {}, sheet: null });
+    this.render({ picks: {}, sheet: null, discards: {} });
     this.schedule();
     return true;
   },
@@ -312,7 +368,13 @@ Page({
         canBuy: myTurn && card.affordable,
         showReserve: myTurn && source === 'board',
         canReserve: myTurn && canReserve,
-        note: g.state.tokens.gold > 0 ? t('fmt.reserveGold') : t('fmt.reserveNoGold'),
+        // 预留不了时说明原因（预留区已满），否则说明能否顺带拿到黄金
+        note:
+          source === 'board' && viewer.reserved.length >= MAX_RESERVED
+            ? t('fmt.reserveFull', MAX_RESERVED)
+            : g.state.tokens.gold > 0
+              ? t('fmt.reserveGold')
+              : t('fmt.reserveNoGold'),
       },
     });
   },
@@ -374,11 +436,23 @@ Page({
     this.setData({ playerSheet: null });
   },
 
+  /** 弃牌阶段：点自己的矿石先选中（再点取消），选够数量后统一确认，可以反悔。 */
   onTapMyToken(e) {
     const v = this.data.view;
     if (!v.myTurn || v.phase !== 'discard') return;
-    const color = e.currentTarget.dataset.color;
-    return this.act({ type: 'discard', color });
+    this.render({ discards: toggleDiscard(this.game, this.data.discards, e.currentTarget.dataset.color) });
+  },
+
+  onClearDiscards() {
+    this.render({ discards: {} });
+  },
+
+  onConfirmDiscard() {
+    if (!this.data.view.discardReady) {
+      toast(this.data.view.discardLabel);
+      return Promise.resolve();
+    }
+    return this.act({ type: 'discardMany', colors: discardList(this.data.discards) });
   },
 
   onPass() {
@@ -520,9 +594,10 @@ Page({
   sendMove(move) {
     if (this.busy) return this.pending;
     this.busy = true;
+    this.setData({ syncing: true });
     this.pending = online
       .call('move', { roomId: this.roomId, version: this.version, move })
-      .then((r) => this.applyOnline(r, { picks: {}, sheet: null }))
+      .then((r) => this.applyOnline(r, { picks: {}, sheet: null, discards: {}, syncing: false }))
       .catch((e) => {
         toast(i18n.errText(e));
         this.busy = false;
@@ -531,6 +606,7 @@ Page({
       })
       .then(() => {
         this.busy = false;
+        if (this.data.syncing) this.setData({ syncing: false });
       });
     return this.pending;
   },

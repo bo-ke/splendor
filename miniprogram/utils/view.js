@@ -122,6 +122,7 @@ function paymentPlan(player, card) {
 function buildView(game, viewer, ui) {
   const s = game.state;
   const picks = (ui && ui.picks) || {};
+  const discards = (ui && ui.discards) || {};
   const locked = !!(ui && ui.locked);
   const cur = game.current;
   // 只有轮到“我”且是人类玩家时，才可操作并标注买得起
@@ -164,6 +165,7 @@ function buildView(game, viewer, ui) {
     name: i18n.dict().color[c],
     n: me.tokens[c],
     bonus: c === 'gold' ? -1 : bonus(me, c),
+    out: (discards && discards[c]) || 0, // 弃牌阶段已选中、待弃回的数量
   }));
 
   const t = i18n.t;
@@ -203,8 +205,31 @@ function buildView(game, viewer, ui) {
     logKey: `${s.turn}-${s.log.length}-${s.phase}`,
     roundLabel: t('fmt.round', s.round),
     waitingLabel: cur.isAI ? t('fmt.botThinking', cur.name) : t('fmt.waitingFor', cur.name),
-    discardLabel: t('fmt.discardBar', game.discardNeeded),
+    discardLabel: t('fmt.discardPick', discardTotal(discards), game.discardNeeded),
+    discardReady: game.discardNeeded > 0 && discardTotal(discards) === game.discardNeeded,
   };
+}
+
+function discardTotal(discards) {
+  return Object.keys(discards).reduce((n, c) => n + discards[c], 0);
+}
+
+/**
+ * 弃牌阶段点击自己的矿石：还没选够就多选一枚；该种已全部选中或已选够时，取消这一种的选择。
+ * 返回新的 discards（{color: n}）。
+ */
+function toggleDiscard(game, discards, color) {
+  const next = Object.assign({}, discards);
+  const have = game.current.tokens[color] || 0;
+  const picked = next[color] || 0;
+  if (picked < have && discardTotal(next) < game.discardNeeded) next[color] = picked + 1;
+  else delete next[color];
+  return next;
+}
+
+/** 选好的弃牌展开成 discardMany 需要的颜色数组。 */
+function discardList(discards) {
+  return Object.keys(discards).reduce((list, c) => list.concat(new Array(discards[c]).fill(c)), []);
 }
 
 /** 根据当前选中的矿石判断能否确认拿取，返回 {ok, kind, colors, hint}。 */
@@ -219,6 +244,10 @@ function evaluatePicks(game, picks) {
   const need = game.requiredDistinct();
   const names = colors.map((c) => L.color[c]).join(L.sep);
   if (colors.length === need) return { ok: true, kind: 'three', colors, hint: i18n.t('fmt.pickOk', names) };
+  // 只选了一种且该种 ≥ 4 份：提示可以再点一次拿 2 份（这个操作不太好发现）
+  if (colors.length === 1 && picks[colors[0]] === 1 && game.canTakeTwo(colors[0])) {
+    return { ok: false, colors, hint: i18n.t('fmt.pickNeed', names, need - 1), tip: i18n.t('fmt.twoHint') };
+  }
   return { ok: false, colors, hint: i18n.t('fmt.pickNeed', names, need - colors.length) };
 }
 
@@ -251,4 +280,14 @@ function togglePick(game, picks, color) {
   return { picks: next };
 }
 
-module.exports = { avatarChar, logIcons, buildView, cardView, evaluatePicks, paymentPlan, togglePick };
+module.exports = {
+  avatarChar,
+  buildView,
+  cardView,
+  discardList,
+  evaluatePicks,
+  logIcons,
+  paymentPlan,
+  toggleDiscard,
+  togglePick,
+};

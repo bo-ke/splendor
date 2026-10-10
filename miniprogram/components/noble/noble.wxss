@@ -47,3 +47,8 @@
   border: 1.5rpx solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.45);
 }
+
+/* 庆祝卡片里的大尺寸 */
+.noble.size-large { width: 240rpx; height: 240rpx; border-radius: 22rpx; border-width: 4rpx; }
+.size-large .side { width: 60rpx; }
+.size-large .pts { font-size: 48rpx; line-height: 56rpx; }

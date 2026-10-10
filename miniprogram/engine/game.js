@@ -233,7 +233,8 @@ class Game {
   /**
    * 统一的出牌入口（本地对局与联机云函数共用）。
    * move: {type:'takeThree', colors} | {type:'takeTwo', color} | {type:'buy', id}
-   *     | {type:'reserve', id} | {type:'reserveDeck', tier} | {type:'discard', color} | {type:'pass'}
+   *     | {type:'reserve', id} | {type:'reserveDeck', tier} | {type:'discard', color}
+   *     | {type:'discardMany', colors: [...]}（一次弃回多枚，必须正好弃到 10 枚）| {type:'pass'}
    */
   apply(move) {
     switch (move && move.type) {
@@ -249,6 +250,8 @@ class Game {
         return this.reserveFromDeck(Number(move.tier));
       case 'discard':
         return this.discard(move.color);
+      case 'discardMany':
+        return this.discardMany(move.colors);
       case 'pass':
         return this.pass();
       default:
@@ -365,6 +368,21 @@ class Game {
       this._log('discard', { who: p.name, max: MAX_TOKENS });
       this._endTurn();
     }
+  }
+
+  /** 一次弃回多枚：先整体校验（数量正好、每种都够），再逐枚弃回，不会只弃一半。 */
+  discardMany(colors) {
+    this._requirePhase('discard');
+    const p = this.current;
+    if (!Array.isArray(colors) || colors.length !== this.discardNeeded) {
+      throw new IllegalMove('discardCount', { n: this.discardNeeded });
+    }
+    const want = {};
+    colors.forEach((c) => (want[c] = (want[c] || 0) + 1));
+    Object.keys(want).forEach((c) => {
+      if (!(p.tokens[c] >= want[c])) throw new IllegalMove('noToken', { color: c });
+    });
+    colors.forEach((c) => this.discard(c));
   }
 
   /** 仅在完全没有合法动作时允许跳过。 */

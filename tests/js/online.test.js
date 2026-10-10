@@ -165,8 +165,12 @@ const ev = (dataset, detail) => ({ currentTarget: { dataset }, detail: detail ||
 async function onlineMove(page) {
   const v = page.data.view;
   if (v.phase === 'discard') {
-    const slot = v.me.slots.find((s) => s.n > 0 && s.color !== 'gold') || v.me.slots.find((s) => s.n > 0);
-    await page.onTapMyToken(ev({ color: slot.color }));
+    for (let i = 0; i < 20 && !page.data.view.discardReady; i++) {
+      const slots = page.data.view.me.slots;
+      const slot = slots.find((s) => s.n > s.out && s.color !== 'gold') || slots.find((s) => s.n > s.out);
+      page.onTapMyToken(ev({ color: slot.color }));
+    }
+    await page.onConfirmDiscard(); // 联机只提交一次
     return;
   }
   const cards = [];
@@ -318,6 +322,19 @@ test('联机：过期操作会自动重新同步；离开后座位由电脑接�
   assert.equal(watcher.game.state.players[seat].reserved[0].hidden, true);
   assert.equal(JSON.stringify(watcher.data).includes(own.id), false, '对手的界面数据里完全没有这张卡');
   assert.ok(watcher.game.state.decks.every((d) => d.every((x) => x === 0)), '牌堆内容不下发');
+
+  // 提交中：操作栏显示“提交中”，返回后恢复
+  const sender = gA.data.view.myTurn ? gA : gB;
+  sender.data.view.bank
+    .filter((x) => x.color !== 'gold' && x.count > 0)
+    .slice(0, sender.data.view.requiredDistinct)
+    .forEach((x) => sender.onTapBank(ev({ color: x.color })));
+  assert.equal(sender.data.pickEval.ok, true);
+  const p = sender.onConfirmTake();
+  assert.equal(sender.data.syncing, true, '提交时操作栏显示“提交中”');
+  await p;
+  await settle();
+  assert.equal(sender.data.syncing, false);
 
   const mover = gA.data.view.myTurn ? gA : gB;
   mover.version -= 1; // 模拟错过了一次更新

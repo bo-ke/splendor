@@ -76,8 +76,13 @@ const ev = (dataset, detail) => ({ currentTarget: { dataset }, detail: detail ||
 function humanMove(page) {
   const v = page.data.view;
   if (v.phase === 'discard') {
-    const slot = v.me.slots.find((s) => s.n > 0 && s.color !== 'gold') || v.me.slots.find((s) => s.n > 0);
-    page.onTapMyToken(ev({ color: slot.color }));
+    // 先逐枚选中（优先非黄金），选够后确认
+    for (let i = 0; i < 20 && !page.data.view.discardReady; i++) {
+      const slots = page.data.view.me.slots;
+      const slot = slots.find((s) => s.n > s.out && s.color !== 'gold') || slots.find((s) => s.n > s.out);
+      page.onTapMyToken(ev({ color: slot.color }));
+    }
+    page.onConfirmDiscard();
     return 'discard';
   }
   const board = [];
@@ -247,7 +252,19 @@ test('对局页：代币超限进入弃牌阶段；可从存档继续', () => {
     page.onTapBank(ev({ color: 'red' }));
     assert.equal(env.toasts.pop(), '请先点击你自己的矿石弃回');
     page.onTapMyToken(ev({ color: 'white' }));
+    assert.equal(page.data.view.phase, 'discard', '选中不等于弃回');
+    assert.equal(page.data.view.me.slots[0].out, 1);
+    page.onConfirmDiscard();
+    assert.match(env.toasts.pop(), /1\/2/, '没选够时提示还差几枚');
+    page.onTapMyToken(ev({ color: 'black' }));
+    page.onClearDiscards();
+    assert.deepEqual(page.data.discards, {}, '可以清空重选');
     page.onTapMyToken(ev({ color: 'white' }));
+    page.onTapMyToken(ev({ color: 'white' }));
+    assert.equal(page.data.view.discardReady, true);
+    page.onTapMyToken(ev({ color: 'red' })); // 已选够，再点别的不再增加
+    assert.equal(page.data.view.me.slots[3].out, 0);
+    page.onConfirmDiscard();
     assert.equal(page.data.view.phase, 'play');
     assert.equal(page.data.view.myTurn, false);
 
@@ -481,6 +498,61 @@ test('回归：关掉结算看牌桌后，切后台再回来不会再弹结算�
     while (env.flush());
     assert.equal(page.data.result, null);
   } finally {
+    env.restore();
+  }
+});
+
+test('交互反馈：得分飘 +N、贵族来访庆祝、轮到我时轻震；拿 2 份的提示；预留满时说明原因', () => {
+  const env = makeEnv();
+  try {
+    let buzzes = 0;
+    global.wx.vibrateShort = () => buzzes++;
+    env.globalData.pendingSeats = [
+      { name: '我', isAI: false },
+      { name: '电脑', isAI: true },
+    ];
+    const page = loadPage(env, 'pages/game/game.js');
+    page.onLoad({});
+    const g = page.game;
+    const me = g.state.players[0];
+
+    // 只选一种且 ≥ 4 份：提示可以再点一次拿 2 份
+    page.onTapBank(ev({ color: 'red' }));
+    assert.equal(page.data.pickEval.tip, '再点一次同一种，可拿 2 份');
+    page.onClearPicks();
+
+    // 塞够贵族要求 + 一张买得起的 1 分卡，买下后：+分、贵族来访
+    const noble = g.state.nobles[0];
+    let k = 0;
+    Object.keys(noble.requirement).forEach((c) => {
+      for (let i = 0; i < noble.requirement[c]; i++) me.cards.push({ id: `x${k++}`, tier: 1, bonus: c, points: 0, cost: {} });
+    });
+    const card = g.state.board[0].find(Boolean);
+    Object.keys(card.cost).forEach((c) => (me.tokens[c] = card.cost[c]));
+    page.render();
+    const before = buzzes;
+    page.onTapCard(ev({ id: card.id, source: 'board' }));
+    page.onSheetBuy();
+    assert.equal(page.data.gain.n, noble.points + card.points);
+    assert.match(page.data.celebrate.text, /前来拜访！$/);
+    assert.equal(page.data.celebrate.points, 3);
+    assert.ok(buzzes > before, '贵族来访时震动');
+
+    // 电脑走完回到我：震动；庆祝卡片会自动消失
+    const b2 = buzzes;
+    while (!page.data.view.myTurn) env.flush();
+    assert.ok(buzzes > b2, '轮到我时震动');
+    while (env.flush());
+    assert.equal(page.data.celebrate, null);
+
+    // 预留区满了：卡牌面板说明原因
+    me.reserved = g.state.board[2].slice(0, 3).map((c) => JSON.parse(JSON.stringify(c)));
+    page.render();
+    page.onTapCard(ev({ id: g.state.board[1].find(Boolean).id, source: 'board' }));
+    assert.equal(page.data.sheet.canReserve, false);
+    assert.match(page.data.sheet.note, /已满/);
+  } finally {
+    delete global.wx.vibrateShort;
     env.restore();
   }
 });

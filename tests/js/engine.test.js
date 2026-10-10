@@ -278,3 +278,19 @@ test('页面引用的美术资源都存在（否则运行 scripts/gen_miniprogra
   }
   assert.ok(checked > 40);
 });
+
+test('一次弃回多枚：数量必须正好，失败时不会只弃一半', () => {
+  const g = Game.create(seats(2), 1);
+  const p = g.state.players[0];
+  p.tokens.white = 5;
+  p.tokens.black = 4;
+  g.takeThree(['red', 'blue', 'green']); // 12 枚，需弃 2
+  assert.throws(() => g.apply({ type: 'discardMany', colors: ['white'] }), IllegalMove);
+  assert.throws(() => g.apply({ type: 'discardMany', colors: ['gold', 'gold'] }), IllegalMove);
+  assert.throws(() => g.apply({ type: 'discardMany', colors: ['red', 'red'] }), IllegalMove, '红色只有 1 枚');
+  assert.equal(tokenCount(p), 12, '失败的尝试不改变任何东西');
+  g.apply({ type: 'discardMany', colors: ['white', 'black'] });
+  assert.equal(tokenCount(p), 10);
+  assert.equal(g.state.phase, 'play');
+  assert.equal(g.currentIndex, 1);
+});
