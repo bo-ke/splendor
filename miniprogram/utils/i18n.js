@@ -72,6 +72,8 @@ const DICT = {
       viewTable: '看看牌桌',
       home: '返回首页',
       language: 'EN',
+      credit: '玩法灵感来自经典桌游《璀璨宝石》（Splendor）',
+      disclaimer: '本作为非官方爱好者作品，与原作者及出版方无关',
     },
     rules: [
       ['目标', '率先达到 15 声望。有人达到后打完本轮，分最高者胜；平分时发展卡较少者胜。'],
@@ -227,6 +229,8 @@ const DICT = {
       viewTable: 'View Table',
       home: 'Home',
       language: '中文',
+      credit: 'Gameplay inspired by the board game Splendor',
+      disclaimer: 'Unofficial fan project · not affiliated with the publisher',
     },
     rules: [
       ['Goal', 'Be the first to reach 15 prestige. When someone does, finish the round; the highest score wins, ties go to whoever bought fewer cards.'],

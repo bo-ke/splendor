@@ -43,6 +43,11 @@
 
   <view class="btn primary start {{t.lang === 'en' ? 'en' : ''}}" hover-class="btn-hover" bindtap="onStart">{{t.start}}</view>
   <view class="link" bindtap="onRules">{{t.howTo}}</view>
+
+  <view class="credit">
+    <view>{{t.credit}}</view>
+    <view class="credit-sub">{{t.disclaimer}}</view>
+  </view>
 </view>
 
 <view wx:if="{{showRules}}" class="mask" bindtap="onRules">
