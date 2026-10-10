@@ -1,6 +1,7 @@
 const { Game, MAX_RESERVED } = require('../../engine/game');
 const ai = require('../../engine/ai');
 const i18n = require('../../utils/i18n');
+const online = require('../../utils/online');
 const storage = require('../../utils/storage');
 const {
   avatarChar,
@@ -37,6 +38,10 @@ Page({
   // ------------------------------------------------------------ 生命周期
   onLoad(options) {
     this.applyLang();
+    if (options && options.room) {
+      this.startOnline(options.room);
+      return;
+    }
     let game = null;
     if (options && options.resume) {
       const state = storage.loadGame();
@@ -58,7 +63,8 @@ Page({
   onShow() {
     // 语言可能在首页被切换过
     if (this.data.t.lang !== i18n.getLang()) this.applyLang();
-    if (this.game) this.schedule();
+    if (this.roomId && this.game) this.syncOnline(); // 从后台回来先追上最新局面
+    else if (this.game) this.schedule();
   },
 
   onHide() {
@@ -67,6 +73,10 @@ Page({
 
   onUnload() {
     this.clearTimer();
+    if (this.watcher) {
+      this.watcher.close();
+      this.watcher = null;
+    }
   },
 
   onShareAppMessage() {
@@ -155,6 +165,7 @@ Page({
   },
 
   persist() {
+    if (this.roomId) return; // 联机对局保存在云端
     if (this.game.isOver) storage.clearGame();
     else storage.saveGame(this.game.state);
   },
@@ -170,6 +181,11 @@ Page({
   schedule() {
     this.clearTimer();
     const g = this.game;
+    if (this.roomId) {
+      // 联机：电脑在云端走，没有交接遮罩；只需在结束时弹一次结算
+      if (g.isOver && !this.resultShown) this.timer = setTimeout(() => this.showResult(), 600);
+      return;
+    }
     if (g.isOver) {
       // 只自动弹一次结算；用户点“看看牌桌”关掉后，切后台再回来不再弹
       if (!this.resultShown) this.timer = setTimeout(() => this.showResult(), 600);
@@ -192,10 +208,11 @@ Page({
     }
   },
 
-  /** 执行一次真人动作，统一处理非法动作提示、存档与重绘。 */
-  act(fn) {
+  /** 执行一次真人动作（move 见 Game.apply），统一处理非法动作提示、存档与重绘。 */
+  act(move) {
+    if (this.roomId) return this.sendMove(move);
     try {
-      fn();
+      this.game.apply(move);
     } catch (e) {
       if (e && e.name === 'IllegalMove') {
         toast(i18n.errText(e));
@@ -243,10 +260,7 @@ Page({
       if (ev.hint) toast(ev.hint);
       return;
     }
-    this.act(() => {
-      if (ev.kind === 'two') this.game.takeTwo(ev.colors[0]);
-      else this.game.takeThree(ev.colors);
-    });
+    return this.act(ev.kind === 'two' ? { type: 'takeTwo', color: ev.colors[0] } : { type: 'takeThree', colors: ev.colors });
   },
 
   onTapCard(e) {
@@ -322,16 +336,13 @@ Page({
   onSheetBuy() {
     const s = this.data.sheet;
     if (!s || !s.canBuy) return;
-    this.act(() => this.game.buy(s.id));
+    return this.act({ type: 'buy', id: s.id });
   },
 
   onSheetReserve() {
     const s = this.data.sheet;
     if (!s || !s.canReserve) return;
-    this.act(() => {
-      if (s.kind === 'deck') this.game.reserveFromDeck(s.tier);
-      else this.game.reserve(s.id);
-    });
+    return this.act(s.kind === 'deck' ? { type: 'reserveDeck', tier: s.tier } : { type: 'reserve', id: s.id });
   },
 
   onCloseSheet() {
@@ -357,12 +368,12 @@ Page({
     const v = this.data.view;
     if (!v.myTurn || v.phase !== 'discard') return;
     const color = e.currentTarget.dataset.color;
-    this.act(() => this.game.discard(color));
+    return this.act({ type: 'discard', color });
   },
 
   onPass() {
     if (!this.ensureMyTurn()) return;
-    this.act(() => this.game.pass());
+    return this.act({ type: 'pass' });
   },
 
   onHandoffReady() {
@@ -401,7 +412,13 @@ Page({
     });
     const rounds = g.state.round;
     this.setData({
-      result: { rank, rounds, title: t('fmt.resultTitle', rank[0].name), sub: t('fmt.resultRounds', rounds) },
+      result: {
+        rank,
+        rounds,
+        title: t('fmt.resultTitle', rank[0].name),
+        sub: t('fmt.resultRounds', rounds),
+        canRematch: !this.roomId || this.isHost, // 联机时只有房主能再开一局
+      },
     });
   },
 
@@ -410,6 +427,17 @@ Page({
   },
 
   onRematch() {
+    if (this.roomId) {
+      if (!this.isHost) {
+        toast(t('ui.waitRematch'));
+        return Promise.resolve();
+      }
+      this.pending = online
+        .call('rematch', { roomId: this.roomId })
+        .then((r) => this.applyOnline(r))
+        .catch((e) => this.onlineFail(e));
+      return this.pending;
+    }
     const seats = this.game.state.players.map((p) => ({ name: p.name, isAI: p.isAI }));
     storage.clearGame();
     this.setupGame(Game.create(seats));
@@ -420,6 +448,89 @@ Page({
     const pages = getCurrentPages();
     if (pages.length > 1) wx.navigateBack();
     else wx.reLaunch({ url: '/pages/index/index' });
+  },
+
+  // ------------------------------------------------------------- 联机
+  startOnline(roomId) {
+    this.roomId = roomId;
+    this.version = 0;
+    if (!online.available()) {
+      toast(t('ui.onlineOff'));
+      setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 1200);
+      return;
+    }
+    online.rememberRoom(roomId);
+    this.syncOnline();
+  },
+
+  syncOnline() {
+    this.pending = online
+      .call('sync', { roomId: this.roomId })
+      .then((r) => this.applyOnline(r))
+      .catch((e) => this.onlineFail(e));
+    return this.pending;
+  },
+
+  /** 应用云函数返回的房间视图（只含自己可见的信息）。 */
+  applyOnline(r, patch) {
+    if (r.room.version < this.version) return; // 晚到的旧结果
+    this.version = r.room.version;
+    this.isHost = r.isHost;
+    if (r.room.status === 'closed' || !r.state) {
+      if (r.room.status === 'waiting') {
+        wx.redirectTo({ url: `/pages/lobby/lobby?roomId=${this.roomId}` });
+        return;
+      }
+      online.forgetRoom();
+      toast(t('ui.roomClosed'));
+      setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 1200);
+      return;
+    }
+    const restarted = !this.game || (this.game.isOver && r.state.phase !== 'over');
+    this.game = new Game(r.state);
+    this.humans = [r.mySeat];
+    this.holder = r.mySeat;
+    const data = Object.assign({}, patch);
+    if (restarted) {
+      this.resultShown = false;
+      Object.assign(data, { result: null, sheet: null, playerSheet: null, picks: {} });
+    }
+    this.render(data);
+    this.refreshOverlays();
+    if (!this.watcher) {
+      this.watcher = online.watchRoom(this.roomId, (v) => {
+        if (v > this.version && !this.busy) this.syncOnline();
+      });
+    }
+    this.watcher.seen(this.version);
+    this.schedule();
+  },
+
+  /** 联机出牌：云端校验并执行（含电脑回合），返回新局面。 */
+  sendMove(move) {
+    if (this.busy) return this.pending;
+    this.busy = true;
+    this.pending = online
+      .call('move', { roomId: this.roomId, version: this.version, move })
+      .then((r) => this.applyOnline(r, { picks: {}, sheet: null }))
+      .catch((e) => {
+        toast(i18n.errText(e));
+        this.busy = false;
+        if (e && (e.code === 'stale' || e.code === 'notYourTurn')) return this.syncOnline();
+        return null;
+      })
+      .then(() => {
+        this.busy = false;
+      });
+    return this.pending;
+  },
+
+  onlineFail(e) {
+    toast(i18n.errText(e));
+    if (e && (e.code === 'noRoom' || e.code === 'notMember')) {
+      online.forgetRoom();
+      setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 1200);
+    }
   },
 
   noop() {},

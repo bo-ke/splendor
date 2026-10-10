@@ -114,3 +114,23 @@
 .rules .p { display: block; margin-top: 8rpx; line-height: 1.65; font-size: 26rpx; color: var(--text); }
 .rules .em { color: var(--gold); font-weight: 700; }
 .wide { display: flex; width: 100%; height: 88rpx; margin-top: 28rpx; }
+
+/* ---------------- 模式切换 / 联机 ---------------- */
+.tabs { display: flex; margin-bottom: 24rpx; padding: 6rpx; border-radius: 22rpx; background: rgba(0, 0, 0, 0.35); border: 1rpx solid var(--line); }
+.tab { flex: 1; text-align: center; padding: 18rpx 0; border-radius: 18rpx; font-size: 28rpx; color: var(--muted); }
+.tab.on { color: #3a2600; font-weight: 700; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); box-shadow: 0 4rpx 12rpx rgba(226, 182, 90, 0.35); }
+.field {
+  box-sizing: border-box;
+  width: 100%;
+  height: 84rpx;
+  padding: 0 24rpx;
+  border-radius: 16rpx;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1rpx solid var(--line);
+  color: var(--text);
+  font-size: 28rpx;
+}
+.join-row { display: flex; align-items: center; margin-top: 28rpx; }
+.field.code { flex: 1; min-width: 0; width: 0; letter-spacing: 6rpx; }
+.join-btn { margin-left: 16rpx; height: 84rpx; padding: 0 40rpx; border-radius: 42rpx; }
+.tip.warn { color: #ffb4aa; margin: 0 0 18rpx; }

@@ -257,7 +257,8 @@
         <text class="rank-detail">{{item.detail}}</text>
       </view>
     </view>
-    <view class="btn primary wide" hover-class="btn-hover" bindtap="onRematch">{{t.rematch}}</view>
+    <view wx:if="{{result.canRematch}}" class="btn primary wide" hover-class="btn-hover" bindtap="onRematch">{{t.rematch}}</view>
+    <view wx:else class="wait-rematch">{{t.waitRematch}}</view>
     <view class="dialog-actions">
       <view class="btn ghost" hover-class="btn-hover" bindtap="onCloseResult">{{t.viewTable}}</view>
       <view class="btn ghost" hover-class="btn-hover" bindtap="onHome">{{t.home}}</view>

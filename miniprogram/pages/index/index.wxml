@@ -21,6 +21,32 @@
     <text class="resume-go">›</text>
   </view>
 
+  <view class="tabs">
+    <view class="tab {{mode === 'local' ? 'on' : ''}}" data-mode="local" bindtap="onMode">{{t.local}}</view>
+    <view class="tab {{mode === 'online' ? 'on' : ''}}" data-mode="online" bindtap="onMode">{{t.online}}</view>
+  </view>
+
+  <block wx:if="{{mode === 'online'}}">
+    <view wx:if="{{lastRoom}}" class="resume" hover-class="btn-hover" bindtap="onBackToRoom">
+      <image class="resume-icon" src="/assets/art/backs/tier3.jpg" mode="aspectFill" />
+      <view class="resume-text">
+        <text class="resume-title">{{t.backToRoom}}</text>
+      </view>
+      <text class="resume-go">›</text>
+    </view>
+    <view class="panel">
+      <view wx:if="{{!onlineOk}}" class="tip warn">{{t.onlineOff}}</view>
+      <view class="label">{{t.nick}}</view>
+      <input class="field" value="{{nick}}" maxlength="12" placeholder="{{t.nickPh}}" placeholder-class="ph" bindinput="onNick" />
+      <view class="btn primary start {{t.lang === 'en' ? 'en' : ''}}" hover-class="btn-hover" bindtap="onCreateRoom">{{t.createRoom}}</view>
+      <view class="join-row">
+        <input class="field code" type="number" value="{{joinCode}}" maxlength="6" placeholder="{{t.codePh}}" placeholder-class="ph" bindinput="onCode" />
+        <view class="btn join-btn" hover-class="btn-hover" bindtap="onJoinRoom">{{t.join}}</view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
   <view class="panel">
     <view class="label">{{t.playerCount}}</view>
     <view class="seg">
@@ -42,6 +68,7 @@
   </view>
 
   <view class="btn primary start {{t.lang === 'en' ? 'en' : ''}}" hover-class="btn-hover" bindtap="onStart">{{t.start}}</view>
+  </block>
   <view class="link" bindtap="onRules">{{t.howTo}}</view>
 
   <view class="credit">

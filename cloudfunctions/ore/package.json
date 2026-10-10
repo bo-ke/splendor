@@ -1,0 +1,9 @@
+{
+  "name": "ore",
+  "version": "1.0.0",
+  "description": "矿石商人 Ore Merchant 联机房间云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

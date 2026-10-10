@@ -1,4 +1,5 @@
 const i18n = require('../../utils/i18n');
+const online = require('../../utils/online');
 const storage = require('../../utils/storage');
 
 const t = i18n.t;
@@ -25,6 +26,11 @@ Page({
     showRules: false,
     ores: ['white', 'blue', 'green', 'red', 'black'],
     t: {},
+    mode: 'local', // local | online
+    onlineOk: false,
+    nick: '',
+    joinCode: '',
+    lastRoom: null,
   },
 
   onLoad() {
@@ -36,7 +42,70 @@ Page({
 
   onShow() {
     if (this.data.t.lang !== i18n.getLang()) this.applyLang();
-    this.setData({ hasSave: !!storage.loadGame() });
+    this.setData({
+      hasSave: !!storage.loadGame(),
+      onlineOk: online.available(),
+      nick: online.nick(),
+      lastRoom: online.lastRoom(),
+    });
+  },
+
+  // ------------------------------------------------------------- 联机
+  onMode(e) {
+    this.setData({ mode: e.currentTarget.dataset.mode });
+  },
+
+  onNick(e) {
+    const nick = String(e.detail.value || '').trim();
+    online.saveNick(nick);
+    this.setData({ nick });
+  },
+
+  onCode(e) {
+    this.setData({ joinCode: String(e.detail.value || '').replace(/\D/g, '').slice(0, 6) });
+  },
+
+  /** 没填昵称时随机一个“矿工1234”。 */
+  ensureNick() {
+    let nick = this.data.nick;
+    if (!nick) {
+      nick = t('fmt.randomNick', Math.floor(1000 + Math.random() * 9000));
+      online.saveNick(nick);
+      this.setData({ nick });
+    }
+    return nick;
+  },
+
+  onCreateRoom() {
+    if (!this.data.onlineOk) return wx.showToast({ title: t('ui.onlineOff'), icon: 'none' });
+    if (this.busy) return this.pending;
+    this.busy = true;
+    wx.showLoading && wx.showLoading({ title: '…', mask: true });
+    this.pending = online
+      .call('create', { name: this.ensureNick(), maxPlayers: 4 })
+      .then((r) => {
+        online.rememberRoom(r.roomId);
+        wx.navigateTo({ url: `/pages/lobby/lobby?roomId=${r.roomId}` });
+      })
+      .catch((e) => wx.showToast({ title: i18n.errText(e), icon: 'none' }))
+      .then(() => {
+        this.busy = false;
+        wx.hideLoading && wx.hideLoading();
+      });
+    return this.pending;
+  },
+
+  onJoinRoom() {
+    if (!this.data.onlineOk) return wx.showToast({ title: t('ui.onlineOff'), icon: 'none' });
+    const code = this.data.joinCode;
+    if (!/^\d{6}$/.test(code)) return wx.showToast({ title: i18n.errText('badCode'), icon: 'none' });
+    this.ensureNick();
+    wx.navigateTo({ url: `/pages/lobby/lobby?code=${code}` });
+  },
+
+  onBackToRoom() {
+    // 对局页会按房间状态决定：等待中 → 跳回房间页；已结束 / 关闭 → 提示并回首页
+    wx.navigateTo({ url: `/pages/game/game?room=${this.data.lastRoom}` });
   },
 
   applyLang() {

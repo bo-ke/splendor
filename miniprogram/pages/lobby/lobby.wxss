@@ -1,0 +1,50 @@
+.page { padding: 30rpx 40rpx 80rpx; }
+
+.card {
+  margin-bottom: 28rpx;
+  padding: 30rpx 28rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, rgba(74, 50, 34, 0.9), rgba(38, 25, 18, 0.94));
+  border: 2rpx solid rgba(180, 138, 68, 0.45);
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+.label { color: var(--muted); font-size: 24rpx; letter-spacing: 2rpx; }
+.code {
+  margin: 12rpx 0 24rpx;
+  font-size: 96rpx;
+  letter-spacing: 18rpx;
+  color: var(--gold-hi);
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.5);
+}
+.invite { width: 100%; height: 88rpx; line-height: 88rpx; border-radius: 44rpx; font-size: 30rpx; }
+button.btn::after { border: none; }
+
+.seats-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18rpx; }
+.count { font-size: 24rpx; color: var(--gold); }
+
+.seat {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 18rpx;
+  margin-top: 12rpx;
+  border-radius: 18rpx;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1rpx solid var(--line);
+  text-align: left;
+}
+.seat.me { border-color: rgba(226, 182, 90, 0.7); }
+.seat.empty { opacity: 0.45; border-style: dashed; }
+.seat .avatar { width: 60rpx; height: 60rpx; }
+.avatar.ghost { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
+.seat-name { flex: 1; margin-left: 18rpx; font-size: 30rpx; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag { margin-left: 10rpx; padding: 2rpx 14rpx; border-radius: 16rpx; font-size: 20rpx; }
+.tag.host { color: #3a2600; background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+.tag.me { color: var(--gold-hi); border: 1rpx solid rgba(226, 182, 90, 0.7); }
+.tag.bot { color: var(--muted); border: 1rpx solid var(--line); }
+.remove { margin-left: 14rpx; padding: 6rpx 16rpx; border-radius: 16rpx; font-size: 22rpx; color: #ffb4aa; border: 1rpx solid rgba(239, 106, 92, 0.6); }
+
+.actions { margin-top: 8rpx; }
+.wide { display: flex; width: 100%; height: 92rpx; margin-top: 20rpx; border-radius: 46rpx; font-size: 30rpx; }
+.waiting { text-align: center; color: var(--gold); padding: 30rpx 0; font-size: 28rpx; }
+.link { text-align: center; margin-top: 34rpx; color: var(--muted); font-size: 26rpx; }

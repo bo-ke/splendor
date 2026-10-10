@@ -3,6 +3,8 @@
   "projectname": "ore-merchant",
   "appid": "touristappid",
   "compileType": "miniprogram",
+  "miniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
   "libVersion": "3.0.0",
   "setting": {
     "es6": true,

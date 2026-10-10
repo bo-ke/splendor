@@ -1,7 +1,8 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/game/game"
+    "pages/game/game",
+    "pages/lobby/lobby"
   ],
   "window": {
     "navigationBarTitleText": "矿石商人",

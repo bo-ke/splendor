@@ -72,3 +72,16 @@ test('错误码翻译与参数', () => {
   assert.equal(i18n.logText({ text: '老存档的纯文本记录' }), '老存档的纯文本记录');
   COLORS.forEach((c) => assert.ok(i18n.t(`ore.${c}`)));
 });
+
+test('云函数与网络层可能返回的每个错误码都有双语翻译', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../cloudfunctions/ore/logic.js'), 'utf8');
+  const idx = fs.readFileSync(path.join(__dirname, '../../cloudfunctions/ore/index.js'), 'utf8');
+  const codes = new Set([
+    ...[...src.matchAll(/RoomError\('(\w+)'/g)].map((m) => m[1]),
+    ...[...src.matchAll(/code: '(\w+)'/g)].map((m) => m[1]),
+    ...[...idx.matchAll(/code: '(\w+)'/g)].map((m) => m[1]),
+    'network', // utils/online.js 的 fail 分支
+  ]);
+  assert.ok(codes.size >= 15, [...codes].join(','));
+  for (const L of [zh, en]) codes.forEach((c) => assert.ok(L.err[c], `err.${c}`));
+});

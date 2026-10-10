@@ -55,10 +55,11 @@ except GameOver as e:
 
 ## 微信小程序《矿石商人》Ore Merchant
 
-`miniprogram/` 是一个可直接导入「微信开发者工具」的原生小程序，单机即可玩，无需服务器。为与原作的名称、美术区分，小程序以「矿石商人」为题：五种矿石为石英 Quartz（白）、青金石 Lapis Lazuli（蓝）、孔雀石 Malachite（绿）、朱砂 Cinnabar（红）、黑曜石 Obsidian（黑），外加黄金 Gold；三层发展卡为矿脉 Mine / 商路 Trade Route / 城邦 City。
+`miniprogram/` 是原生微信小程序：本机对局无需服务器；好友联机使用微信云开发（`cloudfunctions/ore`），不需要自己搭服务器。为与原作的名称、美术区分，小程序以「矿石商人」为题：五种矿石为石英 Quartz（白）、青金石 Lapis Lazuli（蓝）、孔雀石 Malachite（绿）、朱砂 Cinnabar（红）、黑曜石 Obsidian（黑），外加黄金 Gold；三层发展卡为矿脉 Mine / 商路 Trade Route / 城邦 City。
 
 **功能**
 
+- 🌍 **好友联机**：创建房间得到 6 位房间号，点「邀请好友」发分享卡片，好友点开即入座；房主可添加电脑补位。电脑在云端走，离开的玩家由电脑接管，对局随时可回来继续。
 - 🌐 **中英双语**：默认跟随微信语言，首页与对局页右上角可随时切换；对局记录按事件存储，切换后历史记录也会一起翻译。
 - 🤖 **人机对战**：1 名真人 vs 1–3 个电脑（电脑沿用上面的贪心 AI，JS 移植版）。
 - 👥 **同屏多人**：多名真人轮流传手机，轮到谁先弹出交接遮罩，避免误操作。
@@ -70,21 +71,35 @@ except GameOver as e:
 **运行**
 
 1. 安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)。
-2. 「导入项目」→ 目录选 `miniprogram/` → AppID 填你自己的，或先用「测试号」。
+2. 「导入项目」→ 目录选**仓库根目录**（`project.config.json` 在这里，指向 `miniprogram/` 与 `cloudfunctions/`）→ AppID 填你自己的。只玩本机对局也可以先用「测试号」。
 3. 编译即可在模拟器里玩；点「预览」扫码可在手机上真机体验。
+
+**开启好友联机（微信云开发）**
+
+联机需要真实 AppID（测试号不支持云开发），一次性配置：
+
+1. 开发者工具顶部点「云开发」→ 开通并创建一个环境（有免费额度）。
+2. 把环境 ID 填进 `miniprogram/config.js` 的 `cloudEnv`；只有一个环境时可留空，使用默认环境。
+3. 在左侧文件树右键 `cloudfunctions/ore` →「上传并部署：云端安装依赖」。
+4. 「云开发控制台 → 数据库」新建两个集合（不建也行，第一次调用时云函数会自动创建），并把权限设成**自定义安全规则**：
+   - `rooms`：`{ "read": true, "write": false }`——所有人可读（用于实时监听），只有云函数能写；
+   - `room_secrets`：`{ "read": false, "write": false }`——完整对局状态（牌堆顺序、随机种子、所有人的预留卡），只有云函数能读写。
+
+设计上客户端永远拿不到完整状态：每次出牌都由云函数用同一份规则引擎校验，再返回「只含自己可见信息」的局面（牌堆只给张数、别人的预留卡只给卡背）。修改规则引擎后运行 `python scripts/sync_cloud_engine.py` 同步到云函数并重新部署（测试会检查两份是否一致）。
 
 **结构**
 
 ```
+cloudfunctions/ore/  # 联机云函数：index.js 接云数据库，logic.js 房间逻辑，engine/ 为规则引擎副本
 miniprogram/
 ├── engine/          # 规则引擎（JS 移植自 splendor/game.py、player.py、ai.py）
 │   ├── data.js      #   由 scripts/gen_miniprogram_data.py 从 splendor/data/*.json 生成
 │   ├── game.js      #   状态是纯 JSON，可直接 setData / 存档
 │   └── ai.js
 ├── assets/          # 美术资源，由 scripts/gen_miniprogram_art.py 生成（约 500 KB）
-├── utils/           # view.js：状态 → 视图模型；i18n.js：中英文案；storage.js：本地存档
+├── utils/           # view.js：视图模型；i18n.js：中英文案；storage.js：本地存档；online.js：云函数与房间监听
 ├── components/      # card（发展卡）、noble（贵族）
-└── pages/           # index（开局设置 / 玩法说明）、game（对局）
+└── pages/           # index（本机 / 联机入口）、lobby（联机房间）、game（对局，本机与联机共用）
 ```
 
 修改卡牌数据后运行 `python scripts/gen_miniprogram_data.py` 同步；调整美术后运行 `python scripts/gen_miniprogram_art.py`（需要 `pip install pillow numpy`，绘制代码在 `scripts/oreart/`）。JS 测试会检查数据是否一致、页面引用的资源是否都存在。
@@ -92,7 +107,7 @@ miniprogram/
 **测试**（Node ≥ 18，无需安装依赖）
 
 ```bash
-npm test     # 规则引擎 + AI 自对弈（2–4 人 × 40 个种子）+ 用页面事件驱动整局的页面逻辑测试
+npm test     # 规则引擎、AI 自对弈、页面逻辑、双语，以及联机：云函数逻辑 + 两台模拟手机的端到端整局
 ```
 
 **上线前须知**：正式发布需要注册小程序账号并把 `project.config.json` 里的 `appid` 换成自己的。微信对游戏类内容的审核较严格（通常要求以「小游戏」形式发布，正式运营可能涉及版号）；小程序已改用独立的名称《矿石商人》与自绘美术，但规则与 90 张卡牌的数值仍与原作一致，公开上线前建议再做一次知识产权评估。自用或开发版 / 体验版分享给朋友不受影响。

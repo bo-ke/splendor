@@ -1,0 +1,36 @@
+<image class="wall" src="/assets/art/wall.jpg" mode="aspectFill" />
+<view class="page">
+  <view wx:if="{{room}}" class="card">
+    <view class="label">{{t.roomCode}}</view>
+    <view class="code num">{{room.code}}</view>
+    <button class="btn primary invite" open-type="share" hover-class="btn-hover">{{t.invite}}</button>
+  </view>
+
+  <view wx:if="{{room}}" class="card">
+    <view class="seats-head">
+      <text class="label">{{t.seats}}</text>
+      <text class="count">{{countLabel}}</text>
+    </view>
+    <view wx:for="{{seats}}" wx:key="index" class="seat {{item.isMe ? 'me' : ''}}">
+      <view class="avatar av-{{item.hue}}">{{item.initial}}</view>
+      <text class="seat-name">{{item.name}}</text>
+      <text wx:if="{{item.host}}" class="tag host">{{t.hostTag}}</text>
+      <text wx:if="{{item.isMe}}" class="tag me">{{t.youTag}}</text>
+      <text wx:if="{{item.isAI}}" class="tag bot">{{t.bot}}</text>
+      <view wx:if="{{item.canRemove}}" class="remove" data-seat="{{item.index}}" bindtap="onRemove">{{t.remove}}</view>
+    </view>
+    <view wx:for="{{empty}}" wx:key="*this" class="seat empty">
+      <view class="avatar ghost">?</view>
+      <text class="seat-name">{{t.emptySeat}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{room}}" class="actions">
+    <block wx:if="{{isHost}}">
+      <view wx:if="{{empty.length}}" class="btn wide" hover-class="btn-hover" bindtap="onAddBot">{{t.addBot}}</view>
+      <view class="btn primary wide {{seats.length < 2 ? 'disabled' : ''}}" hover-class="btn-hover" bindtap="onStart">{{t.startGame}}</view>
+    </block>
+    <view wx:else class="waiting">{{t.waitingHost}}</view>
+    <view class="link" bindtap="onLeave">{{t.leaveRoom}}</view>
+  </view>
+</view>

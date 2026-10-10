@@ -7,4 +7,5 @@ build/
 .pytest_cache/
 .ruff_cache/
 node_modules/
+project.private.config.json
 miniprogram/project.private.config.json
