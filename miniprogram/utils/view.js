@@ -21,6 +21,27 @@ function avatarChar(name) {
   return Array.from(tail || s)[0];
 }
 
+/** 对局记录旁的小图标：拿了哪些矿、买了什么颜色的卡、盲抽哪层、贵族来访。 */
+function logIcons(entry) {
+  const p = (entry && entry.params) || {};
+  switch (entry && entry.key) {
+    case 'take3':
+      return (p.colors || []).map((c, i) => ({ key: i, kind: 'ore', color: c }));
+    case 'take2':
+      return [0, 1].map((i) => ({ key: i, kind: 'ore', color: p.color }));
+    case 'buy':
+      return [{ key: 0, kind: 'card', color: p.color }];
+    case 'reserve':
+      return [{ key: 0, kind: 'back', tier: p.tier }];
+    case 'noble':
+    case 'reach':
+    case 'over':
+      return [{ key: 0, kind: 'crown' }];
+    default:
+      return [];
+  }
+}
+
 function costList(cost) {
   return COLORS.filter((c) => cost[c]).map((c) => ({ color: c, n: cost[c] }));
 }
@@ -177,6 +198,9 @@ function buildView(game, viewer, ui) {
     opponents,
     me: meView,
     lastLog: i18n.logText(s.log[s.log.length - 1]),
+    lastIcons: logIcons(s.log[s.log.length - 1]),
+    // 每次有新动作就换一个 key，动态条重新挂载并播放一次闪光
+    logKey: `${s.turn}-${s.log.length}-${s.phase}`,
     roundLabel: t('fmt.round', s.round),
     waitingLabel: cur.isAI ? t('fmt.botThinking', cur.name) : t('fmt.waitingFor', cur.name),
     discardLabel: t('fmt.discardBar', game.discardNeeded),
@@ -227,4 +251,4 @@ function togglePick(game, picks, color) {
   return { picks: next };
 }
 
-module.exports = { avatarChar, buildView, cardView, evaluatePicks, paymentPlan, togglePick };
+module.exports = { avatarChar, logIcons, buildView, cardView, evaluatePicks, paymentPlan, togglePick };

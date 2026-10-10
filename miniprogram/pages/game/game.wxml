@@ -1,13 +1,31 @@
+<!-- 对局记录旁的小图标：矿石 / 卡色 / 卡背 / 皇冠 -->
+<template name="logIcons">
+  <view class="li-wrap">
+    <block wx:for="{{icons}}" wx:key="key">
+      <image wx:if="{{item.kind === 'ore'}}" class="li-ore" src="/assets/art/ores/{{item.color}}.png" mode="aspectFit" />
+      <view wx:elif="{{item.kind === 'card'}}" class="li-card gem-bg-{{item.color}}"></view>
+      <image wx:elif="{{item.kind === 'back'}}" class="li-back" src="/assets/art/backs/tier{{item.tier}}.jpg" mode="aspectFill" />
+      <image wx:elif="{{item.kind === 'crown'}}" class="li-crown" src="/assets/crown.svg" mode="aspectFit" />
+    </block>
+  </view>
+</template>
+
 <image class="wall" src="/assets/art/wall.jpg" mode="aspectFill" />
 <view wx:if="{{view}}" class="page">
   <!-- ============ 对手 ============ -->
   <view class="opps">
-    <view wx:for="{{view.opponents}}" wx:key="index" class="opp {{item.isCurrent ? 'cur' : ''}}" data-index="{{item.index}}" bindtap="onTapPlayer">
+    <view wx:for="{{view.opponents}}" wx:key="index" class="opp {{item.isCurrent ? 'cur' : ''}}" hover-class="press" data-index="{{item.index}}" bindtap="onTapPlayer">
       <view class="opp-head">
         <view class="avatar av-{{item.hue}}">{{item.initial}}</view>
         <view class="opp-id">
           <text class="opp-name">{{item.name}}</text>
-          <text class="opp-sub {{item.isCurrent ? 'live' : ''}}">{{item.sub}}</text>
+          <view wx:if="{{item.isCurrent}}" class="opp-live"><view class="live-dot"></view><text>{{item.sub}}</text></view>
+          <view wx:else class="opp-meta">
+            <image class="mi-back" src="/assets/art/backs/tier1.jpg" mode="aspectFill" />
+            <text class="num">{{item.reservedCount}}</text>
+            <view class="mi-coin"></view>
+            <text class="num {{item.tokenTotal >= 9 ? 'warn' : ''}}">{{item.tokenTotal}}</text>
+          </view>
         </view>
         <view class="score">
           <image class="crown" src="/assets/crown.svg" mode="aspectFit" />
@@ -31,7 +49,10 @@
   <view class="ribbon" bindtap="onShowLog">
     <view class="round-pill num">{{view.roundLabel}}</view>
     <text wx:if="{{view.lastRound && view.phase !== 'over'}}" class="last-pill">{{t.lastRound}}</text>
-    <text class="ribbon-text">{{view.lastLog}}</text>
+    <view wx:for="{{[view.logKey]}}" wx:key="*this" class="ribbon-text flash">
+      <template is="logIcons" data="{{icons: view.lastIcons}}" />
+      <text class="ribbon-line">{{view.lastLog}}</text>
+    </view>
     <text class="ribbon-more">{{t.logMore}}</text>
     <view class="lang-pill" catchtap="onToggleLang">{{t.language}}</view>
   </view>
@@ -43,11 +64,11 @@
       <view wx:for="{{view.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" /></view>
     </view>
     <view wx:for="{{view.tiers}}" wx:for-item="row" wx:key="tier" class="tier">
-      <view class="deck {{row.deckCount ? '' : 'empty'}}" data-tier="{{row.tier}}" bindtap="onTapDeck">
+      <view class="deck {{row.deckCount ? '' : 'empty'}}" hover-class="press" data-tier="{{row.tier}}" bindtap="onTapDeck">
         <image class="deck-art" src="/assets/art/backs/tier{{row.tier}}.jpg" mode="scaleToFill" />
         <view class="deck-count num">{{row.deckCount}}</view>
       </view>
-      <view wx:for="{{row.slots}}" wx:for-item="slot" wx:key="key" class="slot" data-id="{{slot.card ? slot.card.id : ''}}" data-source="board" bindtap="onTapCard">
+      <view wx:for="{{row.slots}}" wx:for-item="slot" wx:key="key" class="slot" hover-class="press" data-id="{{slot.card ? slot.card.id : ''}}" data-source="board" bindtap="onTapCard">
         <card card="{{slot.card}}" deal="{{true}}" highlight="{{view.myTurn && view.phase === 'play'}}" selected="{{sheet && slot.card && sheet.id === slot.card.id}}" />
       </view>
     </view>
@@ -55,7 +76,7 @@
 
   <!-- ============ 矿石库 ============ -->
   <view class="bank">
-    <view wx:for="{{view.bank}}" wx:key="color" class="token {{item.picked ? 'picked' : ''}} {{item.count ? '' : 'out'}} {{item.color === 'gold' ? 'is-gold' : ''}}" data-color="{{item.color}}" bindtap="onTapBank">
+    <view wx:for="{{view.bank}}" wx:key="color" hover-class="press" class="token {{item.picked ? 'picked' : ''}} {{item.count ? '' : 'out'}} {{item.color === 'gold' ? 'is-gold' : ''}}" data-color="{{item.color}}" bindtap="onTapBank">
       <image class="chip" src="/assets/art/coins/{{item.color}}.png" mode="aspectFit" />
       <view class="count num">{{item.count}}</view>
       <view wx:if="{{item.picked}}" class="pick-badge num">+{{item.picked}}</view>
@@ -95,7 +116,7 @@
 
     <view class="me-foot">
       <view class="res">
-        <view wx:for="{{view.me.reserved}}" wx:key="id" class="slot" data-id="{{item.id}}" data-source="reserved" bindtap="onTapCard">
+        <view wx:for="{{view.me.reserved}}" wx:key="id" class="slot" hover-class="press" data-id="{{item.id}}" data-source="reserved" bindtap="onTapCard">
           <card card="{{item}}" size="small" highlight="{{view.myTurn && view.phase === 'play'}}" />
         </view>
         <image wx:for="{{view.me.hiddenReserved}}" wx:key="key" class="res-back" src="/assets/art/backs/tier{{item.tier}}.jpg" mode="aspectFill" />
@@ -127,7 +148,10 @@
     <text class="bar-text warn">{{view.discardLabel}}</text>
   </block>
   <block wx:elif="{{pickEval.hint}}">
-    <text class="bar-text">{{pickEval.hint}}</text>
+    <view class="bar-picks">
+      <template is="logIcons" data="{{icons: pickEval.icons}}" />
+      <text class="bar-text">{{pickEval.hint}}</text>
+    </view>
     <view class="btn ghost" hover-class="btn-hover" bindtap="onClearPicks">{{t.clear}}</view>
     <view class="btn primary {{pickEval.ok ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onConfirmTake">{{t.take}}</view>
   </block>
@@ -170,7 +194,7 @@
     </view>
     <view class="sheet-btns">
       <view class="btn ghost" hover-class="btn-hover" bindtap="onCloseSheet">{{sheet.showBuy || sheet.showReserve ? t.cancel : t.close}}</view>
-      <view wx:if="{{sheet.showReserve}}" class="btn {{sheet.canReserve ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onSheetReserve">{{t.reserve}}</view>
+      <view wx:if="{{sheet.showReserve}}" class="btn {{sheet.kind === 'deck' ? 'primary' : ''}} {{sheet.canReserve ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onSheetReserve">{{t.reserve}}</view>
       <view wx:if="{{sheet.showBuy}}" class="btn primary {{sheet.canBuy ? '' : 'disabled'}}" hover-class="btn-hover" bindtap="onSheetBuy">{{t.buy}}</view>
     </view>
   </view>
@@ -206,13 +230,21 @@
         </view>
       </view>
     </view>
-    <view class="pd-row">
-      <text class="pd-label">{{t.reserve}}</text>
-      <image wx:for="{{playerSheet.reservedTiers}}" wx:key="key" class="pd-back" src="/assets/art/backs/tier{{item.tier}}.jpg" mode="scaleToFill" />
-      <text wx:if="{{!playerSheet.reservedCount}}" class="pd-none">{{t.none}}</text>
-      <text class="pd-label gap">{{t.nobles}}</text>
-      <view wx:for="{{playerSheet.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" size="small" /></view>
-      <text wx:if="{{!playerSheet.nobleCount}}" class="pd-none">{{t.none}}</text>
+    <view class="pd-sections">
+      <view class="pd-sec">
+        <text class="pd-label">{{t.reserve}} · {{playerSheet.reservedCount}}</text>
+        <view class="pd-items">
+          <image wx:for="{{playerSheet.reservedTiers}}" wx:key="key" class="pd-back" src="/assets/art/backs/tier{{item.tier}}.jpg" mode="scaleToFill" />
+          <text wx:if="{{!playerSheet.reservedCount}}" class="pd-none">{{t.none}}</text>
+        </view>
+      </view>
+      <view class="pd-sec">
+        <text class="pd-label">{{t.nobles}} · {{playerSheet.nobleCount}}</text>
+        <view class="pd-items">
+          <view wx:for="{{playerSheet.nobles}}" wx:key="id" class="noble-wrap"><noble noble="{{item}}" size="small" /></view>
+          <text wx:if="{{!playerSheet.nobleCount}}" class="pd-none">{{t.none}}</text>
+        </view>
+      </view>
     </view>
     <view class="btn wide" hover-class="btn-hover" bindtap="onClosePlayer">{{t.close}}</view>
   </view>
@@ -221,7 +253,7 @@
 <!-- ============ 同屏多人：交接手机 ============ -->
 <view wx:if="{{handoff}}" class="mask solid">
   <view class="handoff">
-    <image class="handoff-crown" src="/assets/crown.svg" mode="aspectFit" />
+    <view class="avatar huge av-{{handoff.hue}}">{{handoff.initial}}</view>
     <view class="handoff-title">{{handoff.title}}</view>
     <view class="handoff-sub">{{handoff.sub}}</view>
     <view class="btn primary wide" hover-class="btn-hover" bindtap="onHandoffReady">{{handoff.btn}}</view>
@@ -236,6 +268,7 @@
       <view wx:for="{{logs}}" wx:key="key" class="log-item">
         <text class="log-round num">{{item.round}}</text>
         <text class="log-text">{{item.text}}</text>
+        <template is="logIcons" data="{{icons: item.icons}}" />
       </view>
     </scroll-view>
     <view class="btn wide" hover-class="btn-hover" bindtap="onCloseLog">{{t.close}}</view>

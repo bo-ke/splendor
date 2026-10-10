@@ -8,6 +8,7 @@ const {
   buildView,
   cardView,
   evaluatePicks,
+  logIcons,
   paymentPlan,
   togglePick,
 } = require('../../utils/view');
@@ -100,8 +101,11 @@ Page({
   },
 
   handoffView(name) {
+    const index = this.game ? this.game.currentIndex : 0;
     return {
       name,
+      initial: avatarChar(name),
+      hue: index % 4,
       title: t('fmt.handoffTitle', name),
       sub: t('fmt.handoffSub', name),
       btn: t('fmt.handoffBtn', name),
@@ -146,6 +150,12 @@ Page({
       hideReserved: this.humans.length > 1 && this.holder === null,
     });
     data.pickEval = evaluatePicks(this.game, picks);
+    // 操作栏里用图标显示已选的矿石（拿 2 份同种时显示两枚）
+    data.pickEval.icons = Object.keys(picks).reduce(
+      (list, c) => list.concat(Array.from({ length: picks[c] }, () => ({ key: list.length, kind: 'ore', color: c }))),
+      []
+    );
+    data.pickEval.icons.forEach((icon, i) => (icon.key = i));
     this.setData(data);
   },
 
@@ -385,7 +395,7 @@ Page({
     const logs = this.game.state.log
       .slice()
       .reverse()
-      .map((l, i) => ({ key: i, round: l.round, text: i18n.logText(l) }));
+      .map((l, i) => ({ key: i, round: l.round, text: i18n.logText(l), icons: logIcons(l) }));
     this.setData({ showLog: true, logs });
   },
 

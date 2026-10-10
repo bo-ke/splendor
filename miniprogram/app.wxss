@@ -64,6 +64,8 @@ page {
 .btn.ghost { background: transparent; box-shadow: none; }
 .btn.disabled { opacity: 0.38; box-shadow: none; }
 .btn-hover { transform: scale(0.97); opacity: 0.85; }
+/* 卡牌、矿石等可点元素的按下反馈 */
+.press { transform: scale(0.95); opacity: 0.88; transition: transform 0.08s; }
 
 /* 头像 */
 .avatar {
