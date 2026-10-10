@@ -118,7 +118,9 @@ test('预留：拿黄金、上限 3 张、可盲抽、之后可买预留卡', ()
   assert.equal(p.reserved.length, 1);
   assert.equal(p.tokens.gold, 1);
   assert.equal(g.state.tokens.gold, 4);
-  assert.equal(g.state.board[1][0], null); // 预留不补位（与 Python 版一致）
+  // 规则：场上被预留的卡立即从同层牌堆补位
+  assert.ok(g.state.board[1][0] && g.state.board[1][0].id !== cid);
+  assert.equal(g.state.decks[1].length, 30 - 4 - 1);
 
   g.takeTwo('red'); // P2
   const deckBefore = g.state.decks[2].length;
@@ -213,7 +215,7 @@ test('存档恢复：JSON 往返后可继续对局', () => {
   const cid = restored.state.board[0][0].id;
   restored.reserve(cid);
   assert.equal(restored.state.players[1].reserved[0].id, cid);
-  assert.equal(restored.state.board[0][0], null);
+  assert.notEqual(restored.state.board[0][0].id, cid); // 已补位
 });
 
 test('AI 自对弈：2–4 人、多个种子均能正常结束且守恒', () => {

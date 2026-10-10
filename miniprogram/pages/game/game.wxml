@@ -98,6 +98,7 @@
         <view wx:for="{{view.me.reserved}}" wx:key="id" class="slot" data-id="{{item.id}}" data-source="reserved" bindtap="onTapCard">
           <card card="{{item}}" size="small" highlight="{{view.myTurn && view.phase === 'play'}}" />
         </view>
+        <image wx:for="{{view.me.hiddenReserved}}" wx:key="key" class="res-back" src="/assets/art/backs/tier{{item.tier}}.jpg" mode="aspectFill" />
         <view wx:for="{{view.me.emptySlots}}" wx:key="*this" class="res-empty"><text>{{t.reserve}}</text></view>
       </view>
       <view class="my-nobles">

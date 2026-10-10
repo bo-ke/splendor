@@ -133,7 +133,7 @@ class Game:
             card = self.card_by_id(card_id)
             if card is None:
                 raise IllegalMove("场上没有这张卡")
-            self._remove_from_board(card)
+            self._remove_from_board(card, refill=True)  # 规则：场上被拿走的卡立即补位
         elif tier in (1, 2, 3):
             if not self.decks[tier]:
                 raise IllegalMove(f"第 {tier} 层牌堆已空")

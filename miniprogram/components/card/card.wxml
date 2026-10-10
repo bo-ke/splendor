@@ -8,7 +8,7 @@
   <view class="cost">
     <view wx:for="{{card.cost}}" wx:key="color" class="pip num gem-text gem-bg-{{item.color}}">{{item.n}}</view>
   </view>
-  <view wx:if="{{highlight && card.affordable}}" class="buy-tag {{card.goldNeeded ? 'gold' : ''}}">{{card.goldNeeded ? '金×' + card.goldNeeded : '可买'}}</view>
+  <view wx:if="{{highlight && card.affordable}}" class="buy-tag {{card.goldNeeded ? 'gold' : ''}}">{{card.tag}}</view>
 </view>
 <view wx:else class="card empty size-{{size}}">
   <view class="empty-mark"></view>

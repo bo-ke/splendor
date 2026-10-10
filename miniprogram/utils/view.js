@@ -9,7 +9,6 @@ const {
   MAX_RESERVED,
   MAX_TOKENS,
   bonus,
-  canAfford,
   goldNeeded,
   points,
   tokenCount,
@@ -40,8 +39,11 @@ function cardView(card, player) {
     flip: parseInt(String(card.id).replace(/\D/g, ''), 10) % 2 === 1,
   };
   if (player) {
-    v.affordable = canAfford(player, card);
     v.goldNeeded = goldNeeded(player, card);
+    v.affordable = v.goldNeeded <= player.tokens.gold;
+    if (v.affordable) {
+      v.tag = v.goldNeeded ? i18n.t('fmt.goldTag', v.goldNeeded) : i18n.t('ui.canBuy');
+    }
   }
   return v;
 }
@@ -93,7 +95,8 @@ function paymentPlan(player, card) {
 /**
  * @param {Game} game
  * @param {number} viewer 我方面板展示哪位玩家
- * @param {{picks?: Object<string, number>, locked?: boolean}} [ui] 页面上的临时选择 / 是否锁定操作
+ * @param {{picks?: Object<string, number>, locked?: boolean, hideReserved?: boolean}} [ui]
+ *   页面上的临时选择 / 是否锁定操作 / 是否把“我”的预留卡显示为卡背（同屏多人且不确定谁拿着手机时）
  */
 function buildView(game, viewer, ui) {
   const s = game.state;
@@ -122,8 +125,16 @@ function buildView(game, viewer, ui) {
     picked: picks[c] || 0,
   }));
 
-  const meView = playerView(game, me, viewer);
-  meView.reserved = me.reserved.map((c) => cardView(c, activeHuman));
+  const players = s.players.map((p, i) => playerView(game, p, i));
+  const meView = Object.assign({}, players[viewer]);
+  if (ui && ui.hideReserved) {
+    // 不知道手机在谁手上：预留卡（可能含盲抽）只露卡背
+    meView.reserved = [];
+    meView.hiddenReserved = meView.reservedTiers;
+  } else {
+    meView.reserved = me.reserved.map((c) => cardView(c, activeHuman));
+    meView.hiddenReserved = [];
+  }
   meView.emptySlots = Array.from({ length: MAX_RESERVED - me.reserved.length }, (_, i) => i);
   meView.tokenPct = Math.min(100, (meView.tokenTotal / MAX_TOKENS) * 100);
   // 每列：上方永久加成（发展卡数），下方手中代币；黄金没有加成
@@ -140,14 +151,13 @@ function buildView(game, viewer, ui) {
   else meView.sub = game.isOver ? t('fmt.meOver') : t('fmt.meWaiting');
   meView.holding = t('fmt.holding', meView.tokenTotal);
 
-  const opponents = s.players
-    .map((p, i) => playerView(game, p, i))
+  const opponents = players
     .filter((p) => p.index !== viewer)
-    .map((p) => {
-      if (p.isCurrent) p.sub = p.isAI ? t('fmt.thinking') : t('fmt.inTurn');
-      else p.sub = t('fmt.oppSub', p.reservedCount, p.tokenTotal);
-      return p;
-    });
+    .map((p) =>
+      Object.assign({}, p, {
+        sub: p.isCurrent ? (p.isAI ? t('fmt.thinking') : t('fmt.inTurn')) : t('fmt.oppSub', p.reservedCount, p.tokenTotal),
+      })
+    );
 
   return {
     phase: s.phase,
@@ -163,7 +173,7 @@ function buildView(game, viewer, ui) {
     bank,
     tiers,
     nobles: s.nobles.map(nobleView),
-    players: s.players.map((p, i) => playerView(game, p, i)),
+    players,
     opponents,
     me: meView,
     lastLog: i18n.logText(s.log[s.log.length - 1]),

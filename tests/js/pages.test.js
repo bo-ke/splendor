@@ -354,3 +354,133 @@ test('双语：未设置偏好时跟随系统语言', () => {
     env.restore();
   }
 });
+
+// ------------------------------------------------------------ 回归测试
+test('回归：同屏多人读档后、电脑回合里不泄露预留卡（含盲抽）', () => {
+  const env = makeEnv();
+  try {
+    env.globalData.pendingSeats = [
+      { name: 'A', isAI: false },
+      { name: 'B', isAI: false },
+      { name: 'C', isAI: true },
+    ];
+    const page = loadPage(env, 'pages/game/game.js');
+    page.onLoad({});
+    page.onHandoffReady();
+    page.onTapDeck(ev({ tier: 3 }));
+    page.onSheetReserve(); // A 盲抽预留
+    page.onHandoffReady();
+    humanMove(page); // B
+    assert.equal(page.game.current.name, 'C');
+    page.onUnload();
+
+    const resumed = loadPage(env, 'pages/game/game.js');
+    resumed.onLoad({ resume: '1' });
+    assert.equal(resumed.data.view.me.name, 'A');
+    assert.deepEqual(resumed.data.view.me.reserved, [], '不知道谁拿着手机时不显示牌面');
+    assert.equal(resumed.data.view.me.hiddenReserved.length, 1);
+    assert.equal(resumed.data.view.me.hiddenReserved[0].tier, 3);
+  } finally {
+    env.restore();
+  }
+});
+
+test('回归：0 号座位改成电脑时默认名不与其他座位重复', () => {
+  const env = makeEnv();
+  try {
+    const page = loadPage(env, 'pages/index/index.js');
+    page.onLoad();
+    page.onToggleAI(ev({ i: 0 }));
+    const names = page.data.seats.map((s) => s.name);
+    assert.equal(new Set(names).size, 4, names.join(','));
+    page.onStart();
+    assert.deepEqual(env.nav, ['/pages/game/game']);
+  } finally {
+    env.restore();
+  }
+});
+
+test('回归：卡牌“可买”角标跟随语言', () => {
+  const env = makeEnv();
+  try {
+    const i18n = require(path.join(ROOT, 'utils/i18n.js'));
+    const { cardView } = require(path.join(ROOT, 'utils/view.js'));
+    const card = { id: 'd01', tier: 1, bonus: 'red', points: 0, cost: { white: 1, blue: 1 } };
+    const p = { cards: [], tokens: { white: 1, blue: 0, green: 0, red: 0, black: 0, gold: 1 } };
+    assert.equal(cardView(card, p).tag, '金×1');
+    i18n.setLang('en');
+    assert.equal(cardView(card, p).tag, 'Gold×1');
+    p.tokens.blue = 1;
+    assert.equal(cardView(card, p).tag, 'Buy');
+  } finally {
+    env.restore();
+  }
+});
+
+test('回归：电脑行动后，开着的卡牌面板 / 对手详情会刷新而不是显示过期内容', () => {
+  const env = makeEnv();
+  try {
+    env.globalData.pendingSeats = [
+      { name: '我', isAI: false },
+      { name: '电脑', isAI: true },
+    ];
+    const page = loadPage(env, 'pages/game/game.js');
+    page.onLoad({});
+    humanMove(page);
+    // 电脑回合：打开第 1 层第一张卡、以及对手详情
+    const target = page.data.view.tiers[2].slots[0].card;
+    page.onTapCard(ev({ id: target.id, source: 'board' }));
+    assert.equal(page.data.sheet.showBuy, false);
+    page.onTapPlayer(ev({ index: 1 }));
+    const before = page.data.playerSheet.tokenTotal;
+    env.flush(); // 电脑走一步
+    const s = page.data.sheet;
+    if (page.game.boardCard(target.id)) {
+      assert.equal(s.id, target.id);
+      assert.equal(s.showBuy, true, '轮到我了，面板应带上购买按钮');
+    } else {
+      assert.equal(s, null, '卡被电脑拿走后面板应关闭');
+    }
+    assert.equal(page.data.playerSheet.tokenTotal, page.data.view.players[1].tokenTotal);
+    assert.ok(typeof before === 'number');
+
+    // 模拟卡被拿走：刷新后面板关闭
+    page.onTapCard(ev({ id: page.data.view.tiers[2].slots[1].card.id, source: 'board' }));
+    const gone = page.game.boardCard(page.data.sheet.id);
+    page.game._removeFromBoard(gone, true);
+    page.refreshOverlays();
+    assert.equal(page.data.sheet, null);
+
+    // 再来一局时清掉对手详情
+    page.onRematch();
+    assert.equal(page.data.playerSheet, null);
+  } finally {
+    env.restore();
+  }
+});
+
+test('回归：关掉结算看牌桌后，切后台再回来不会再弹结算；轮数与记录一致', () => {
+  const env = makeEnv();
+  try {
+    env.globalData.pendingSeats = [
+      { name: '我', isAI: false },
+      { name: '电脑', isAI: true },
+    ];
+    const page = loadPage(env, 'pages/game/game.js');
+    page.onLoad({});
+    assert.ok(playOut(env, page));
+    const { rounds } = page.data.result;
+    assert.equal(page.data.view.round, rounds, '棋盘上的轮数 = 实际打完的轮数');
+    const log = page.game.state.log;
+    assert.equal(log[log.length - 1].key, 'over');
+    assert.equal(log[log.length - 1].round, rounds);
+
+    page.onCloseResult();
+    page.onHide();
+    page.onShow();
+    while (env.flush());
+    assert.equal(page.data.result, null);
+  } finally {
+    env.restore();
+  }
+});

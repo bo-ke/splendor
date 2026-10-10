@@ -81,6 +81,9 @@ def test_reserve_grants_gold():
     assert len(p.reserved) == 1
     assert p.tokens["gold"] == 1
     assert g.tokens["gold"] == 4
+    # 规则：场上被预留的卡立即从同层牌堆补位
+    assert g.board[2][0] is not None and g.board[2][0].id != cid
+    assert len(g.decks[2]) == 30 - 4 - 1  # 键是层级：第 2 层共 30 张
 
 
 def test_noble_auto_visit():

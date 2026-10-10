@@ -3,10 +3,13 @@ const storage = require('../../utils/storage');
 
 const t = i18n.t;
 
-/** 座位 i 的默认名（按当前语言）：0 号是“我”，其余真人是“玩家N”，电脑依次是甲乙丙。 */
+/**
+ * 座位 i 的默认名（按当前语言）：0 号是“我”，其余真人是“玩家N”。
+ * 电脑：1–3 号依次是甲乙丙，0 号改成电脑时用“丁”，保证 4 个座位的默认名互不重复。
+ */
 function defaultName(i, isAI) {
   const L = i18n.dict();
-  if (isAI) return L.botNames[Math.max(0, i - 1)];
+  if (isAI) return L.botNames[i === 0 ? 3 : i - 1];
   return i === 0 ? L.me : t('fmt.playerN', i + 1);
 }
 

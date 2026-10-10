@@ -3,6 +3,6 @@
   "private": true,
   "description": "微信小程序（miniprogram/）JS 引擎与页面逻辑测试",
   "scripts": {
-    "test": "node --test \"tests/js/*.test.js\""
+    "test": "node --test"
   }
 }

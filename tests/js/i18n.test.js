@@ -27,7 +27,7 @@ test('中英词典键完全一致', () => {
   for (const L of [zh, en]) {
     ALL_TOKENS.forEach((c) => assert.ok(L.color[c] && L.ore[c], c));
     NOBLES.forEach((n) => assert.ok(L.noble[n.id], n.id));
-    assert.equal(L.botNames.length, 3);
+    assert.equal(L.botNames.length, 4); // 4 个座位各有自己的默认电脑名
   }
 });
 

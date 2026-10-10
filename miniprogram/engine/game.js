@@ -270,7 +270,7 @@ class Game {
     if (!this.canReserve()) throw new IllegalMove('reserveMax', { n: MAX_RESERVED });
     const card = this.boardCard(cardId);
     if (!card) throw new IllegalMove('noCard');
-    this._removeFromBoard(card);
+    this._removeFromBoard(card, true); // 规则：场上被拿走的卡立即从同层牌堆补上
     this._doReserve(card, false);
   }
 
@@ -406,8 +406,11 @@ class Game {
     }
     const isLastSeat = this.currentIndex === s.players.length - 1;
     s.turn += 1;
+    if (s.lastRound && isLastSeat) {
+      this._finish(); // round 停在实际打完的最后一轮
+      return;
+    }
     if (isLastSeat) s.round += 1;
-    if (s.lastRound && isLastSeat) this._finish();
   }
 
   _finish() {

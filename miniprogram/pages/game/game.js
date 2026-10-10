@@ -81,8 +81,7 @@ Page({
     this.render();
     if (this.data.handoff) this.setData({ handoff: this.handoffView(this.game.current.name) });
     if (this.data.result) this.showResult();
-    if (this.data.showLog) this.onShowLog();
-    this.setData({ sheet: null, playerSheet: null });
+    this.refreshOverlays(); // 打开着的面板 / 记录按新语言重算
   },
 
   onToggleLang() {
@@ -106,8 +105,8 @@ Page({
     this.humans = humans;
     // 当前“手持手机”的真人；单人局恒为那位真人
     this.holder = humans.length === 1 ? humans[0] : null;
-    this.setData({ picks: {}, sheet: null, result: null, handoff: null, showLog: false });
-    this.render();
+    this.resultShown = false;
+    this.render({ picks: {}, sheet: null, playerSheet: null, result: null, handoff: null, showLog: false, logs: [] });
     this.schedule();
   },
 
@@ -123,12 +122,36 @@ Page({
     return !g.current.isAI && this.humans.length > 1 && this.holder !== g.currentIndex;
   },
 
-  render() {
-    const view = buildView(this.game, this.viewer(), {
-      picks: this.data.picks,
+  /**
+   * 重算视图并一次性 setData（setData 跨线程序列化，是小程序里最贵的操作，尽量合并）。
+   * @param {Object} [patch] 要一起写入的其他数据；含 picks 时按新的选择渲染
+   */
+  render(patch) {
+    const data = Object.assign({}, patch);
+    const picks = data.picks || this.data.picks;
+    data.view = buildView(this.game, this.viewer(), {
+      picks,
       locked: this.locked(),
+      // 同屏多人刚读档时不知道手机在谁手上，预留卡（可能含盲抽）只露卡背
+      hideReserved: this.humans.length > 1 && this.holder === null,
     });
-    this.setData({ view, pickEval: evaluatePicks(this.game, this.data.picks) });
+    data.pickEval = evaluatePicks(this.game, picks);
+    this.setData(data);
+  },
+
+  /** 电脑走完一步后，把仍开着的弹层刷新成最新局面，避免显示过期内容。 */
+  refreshOverlays() {
+    const { sheet, playerSheet, showLog } = this.data;
+    if (sheet) {
+      const viewer = this.game.state.players[this.viewer()];
+      const still =
+        sheet.kind === 'card' &&
+        (sheet.source === 'reserved' ? viewer.reserved.some((c) => c.id === sheet.id) : this.game.boardCard(sheet.id));
+      if (still) this.openCardSheet(sheet.id, sheet.source);
+      else this.setData({ sheet: null });
+    }
+    if (playerSheet) this.openPlayerSheet(playerSheet.index);
+    if (showLog) this.onShowLog();
   },
 
   persist() {
@@ -148,7 +171,8 @@ Page({
     this.clearTimer();
     const g = this.game;
     if (g.isOver) {
-      if (!this.data.result) this.timer = setTimeout(() => this.showResult(), 600);
+      // 只自动弹一次结算；用户点“看看牌桌”关掉后，切后台再回来不再弹
+      if (!this.resultShown) this.timer = setTimeout(() => this.showResult(), 600);
       return;
     }
     const cur = g.current;
@@ -158,6 +182,7 @@ Page({
         ai.step(g);
         this.persist();
         this.render();
+        this.refreshOverlays();
         this.schedule();
       }, AI_DELAY);
       return;
@@ -178,9 +203,8 @@ Page({
       }
       throw e;
     }
-    this.setData({ picks: {}, sheet: null });
     this.persist();
-    this.render();
+    this.render({ picks: {}, sheet: null });
     this.schedule();
     return true;
   },
@@ -206,13 +230,11 @@ Page({
       toast(res.error);
       return;
     }
-    this.setData({ picks: res.picks });
-    this.render();
+    this.render({ picks: res.picks });
   },
 
   onClearPicks() {
-    this.setData({ picks: {} });
-    this.render();
+    this.render({ picks: {} });
   },
 
   onConfirmTake() {
@@ -229,7 +251,11 @@ Page({
 
   onTapCard(e) {
     const { id, source } = e.currentTarget.dataset;
-    if (!id) return;
+    if (id) this.openCardSheet(id, source);
+  },
+
+  /** 打开（或按最新局面重算）某张卡的购买 / 预留面板。 */
+  openCardSheet(id, source) {
     const g = this.game;
     const viewer = g.state.players[this.viewer()];
     const raw = source === 'reserved' ? viewer.reserved.find((c) => c.id === id) : g.boardCard(id);
@@ -313,7 +339,10 @@ Page({
   },
 
   onTapPlayer(e) {
-    const i = Number(e.currentTarget.dataset.index);
+    this.openPlayerSheet(Number(e.currentTarget.dataset.index));
+  },
+
+  openPlayerSheet(i) {
     const p = this.data.view.players[i];
     if (p) {
       this.setData({ playerSheet: Object.assign({}, p, { sub: t('fmt.playerSub', p.isAI, p.cardCount, p.tokenTotal) }) });
@@ -338,8 +367,7 @@ Page({
 
   onHandoffReady() {
     this.holder = this.game.currentIndex;
-    this.setData({ handoff: null, picks: {} });
-    this.render();
+    this.render({ handoff: null, picks: {} });
   },
 
   onShowLog() {
@@ -355,6 +383,7 @@ Page({
   },
 
   showResult() {
+    this.resultShown = true;
     const g = this.game;
     const rank = g.ranking().map((r, i) => {
       const p = g.state.players[r.index];
@@ -370,7 +399,7 @@ Page({
         detail: t('fmt.rankDetail', r.cards, p.nobles.length),
       };
     });
-    const rounds = g.state.round - 1;
+    const rounds = g.state.round;
     this.setData({
       result: { rank, rounds, title: t('fmt.resultTitle', rank[0].name), sub: t('fmt.resultRounds', rounds) },
     });
