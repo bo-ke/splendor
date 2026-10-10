@@ -4,7 +4,7 @@
     "pages/game/game"
   ],
   "window": {
-    "navigationBarTitleText": "矿石",
+    "navigationBarTitleText": "矿石商人",
     "navigationBarBackgroundColor": "#1b1412",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#1b1412",

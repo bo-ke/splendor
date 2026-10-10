@@ -1,6 +1,6 @@
 {
-  "description": "矿石 —— 中世纪矿业主题的卡牌引擎构筑小游戏",
-  "projectname": "ore",
+  "description": "矿石商人 Ore Merchant —— 中世纪矿业主题的卡牌引擎构筑小游戏（中英双语）",
+  "projectname": "ore-merchant",
   "appid": "touristappid",
   "compileType": "miniprogram",
   "libVersion": "3.0.0",

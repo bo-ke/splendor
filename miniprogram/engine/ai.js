@@ -65,22 +65,15 @@ function chooseDiscard(game) {
   return held.sort((a, b) => p.tokens[b] - (keep[b] || 0) - (p.tokens[a] - (keep[a] || 0)))[0];
 }
 
-/** 为当前玩家决策并执行一个完整回合（含弃牌），返回动作描述。 */
+/** 为当前玩家决策并执行一个完整回合（含弃牌），返回这一步新增的对局记录。 */
 function step(game) {
-  if (game.isOver) return '';
-  if (game.state.phase === 'discard') {
-    while (game.state.phase === 'discard') game.discard(chooseDiscard(game));
-    return game.state.log[game.state.log.length - 1].text;
-  }
-
-  const p = game.current;
-  const before = game.state.log.length;
-  act(game, p);
+  if (game.isOver) return [];
+  const log = game.state.log;
+  const last = log[log.length - 1];
+  if (game.state.phase !== 'discard') act(game, game.current);
   while (game.state.phase === 'discard') game.discard(chooseDiscard(game));
-  return game.state.log
-    .slice(before)
-    .map((l) => l.text)
-    .join('；');
+  // 记录有上限会被截断，所以从上一条之后开始取
+  return log.slice(log.indexOf(last) + 1);
 }
 
 function act(game, p) {

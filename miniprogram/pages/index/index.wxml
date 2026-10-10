@@ -1,68 +1,59 @@
 <image class="wall" src="/assets/art/wall.jpg" mode="aspectFill" />
 <view class="page">
+  <view class="topbar">
+    <view class="lang-pill" bindtap="onToggleLang">{{t.language}}</view>
+  </view>
   <view class="hero">
     <view class="ores">
       <image wx:for="{{ores}}" wx:key="*this" class="ore g{{index}}" src="/assets/art/ores/{{item}}.png" mode="aspectFit" />
     </view>
-    <view class="title">矿 石</view>
-    <view class="sub">开采矿脉 · 经营商路 · 赢得贵族青睐</view>
+    <view class="title {{t.lang === 'en' ? 'en' : ''}}">{{t.appName}}</view>
+    <view wx:if="{{t.lang === 'zh'}}" class="title-en">ORE MERCHANT</view>
+    <view class="sub">{{t.subtitle}}</view>
   </view>
 
   <view wx:if="{{hasSave}}" class="resume" hover-class="btn-hover" bindtap="onResume">
     <image class="resume-icon" src="/assets/art/backs/tier2.jpg" mode="aspectFill" />
     <view class="resume-text">
-      <text class="resume-title">继续上局</text>
-      <text class="resume-sub">对局已自动保存</text>
+      <text class="resume-title">{{t.resume}}</text>
+      <text class="resume-sub">{{t.resumeSub}}</text>
     </view>
     <text class="resume-go">›</text>
   </view>
 
   <view class="panel">
-    <view class="label">玩家人数</view>
+    <view class="label">{{t.playerCount}}</view>
     <view class="seg">
       <view wx:for="{{[2, 3, 4]}}" wx:key="*this" class="seg-item {{count === item ? 'on' : ''}}" data-n="{{item}}" bindtap="onCount">
-        <text class="num">{{item}}</text> 人
+        <text class="num">{{item}}</text> {{t.people}}
       </view>
     </view>
 
-    <view class="label gap">座位 · 按出手顺序</view>
+    <view class="label gap">{{t.seats}}</view>
     <view wx:for="{{seats}}" wx:if="{{index < count}}" class="seat">
       <view class="avatar av-{{index}}">{{index + 1}}</view>
-      <input class="seat-name" value="{{item.name}}" maxlength="8" placeholder="输入名字" placeholder-class="ph" data-i="{{index}}" bindinput="onName" />
+      <input class="seat-name" value="{{item.name}}" maxlength="12" placeholder="{{t.namePh}}" placeholder-class="ph" data-i="{{index}}" bindinput="onName" />
       <view class="type" data-i="{{index}}" bindtap="onToggleAI">
-        <view class="type-opt {{item.isAI ? '' : 'on'}}">真人</view>
-        <view class="type-opt {{item.isAI ? 'on' : ''}}">电脑</view>
+        <view class="type-opt {{item.isAI ? '' : 'on'}}">{{t.human}}</view>
+        <view class="type-opt {{item.isAI ? 'on' : ''}}">{{t.bot}}</view>
       </view>
     </view>
-    <view class="tip">多名真人时为同屏轮流模式，轮到谁就把手机交给谁。</view>
+    <view class="tip">{{t.hotseatTip}}</view>
   </view>
 
-  <view class="btn primary start" hover-class="btn-hover" bindtap="onStart">开始新游戏</view>
-  <view class="link" bindtap="onRules">玩法说明</view>
+  <view class="btn primary start {{t.lang === 'en' ? 'en' : ''}}" hover-class="btn-hover" bindtap="onStart">{{t.start}}</view>
+  <view class="link" bindtap="onRules">{{t.howTo}}</view>
 </view>
 
 <view wx:if="{{showRules}}" class="mask" bindtap="onRules">
   <view class="dialog rules" catchtap="noop">
-    <view class="dialog-title">玩法说明</view>
+    <view class="dialog-title">{{t.howTo}}</view>
     <scroll-view scroll-y class="rules-body">
-      <view class="h">目标</view>
-      <view class="p">率先达到 <text class="em">15</text> 声望。有人达到后打完本轮，分最高者胜；平分时发展卡较少者胜。</view>
-      <view class="h">五种矿石 + 黄金</view>
-      <view class="p">石英（白）· 青金石（蓝）· 孔雀石（绿）· 朱砂（红）· 黑曜石（黑），黄金可当任意矿石使用。</view>
-      <view class="h">每回合选一个动作</view>
-      <view class="p"><text class="em">①</text> 拿 3 份不同的矿石（桌上不足 3 种时拿满剩余种类）。</view>
-      <view class="p"><text class="em">②</text> 拿 2 份同种矿石（该种剩余 ≥ 4 份时才可）。再点一次已选的矿石即可切换。</view>
-      <view class="p"><text class="em">③</text> 预留 1 张发展卡（场上或盲抽牌堆），并获得 1 份黄金。最多预留 3 张。</view>
-      <view class="p"><text class="em">④</text> 购买 1 张场上或自己预留的发展卡。</view>
-      <view class="h">发展卡</view>
-      <view class="p">三层牌分别是矿脉、商路与城邦。每张已购发展卡永久提供 1 份右上角的矿石，自动抵扣之后的购买成本。</view>
-      <view class="h">贵族</view>
-      <view class="p">回合结束时，若你的发展卡满足某位贵族的要求，他会自动来访，带来 3 声望（每回合至多一位）。</view>
-      <view class="h">持有上限</view>
-      <view class="p">回合结束时手中矿石（含黄金）不得超过 10 份，超出须自选弃回。</view>
-      <view class="h">操作提示</view>
-      <view class="p">买得起的卡会发出绿光；点卡牌可看到每种矿石怎么付、还差多少；点对手查看其详情。</view>
+      <block wx:for="{{t.rules}}" wx:key="key">
+        <view class="h">{{item.h}}</view>
+        <text class="p" decode="{{false}}">{{item.p}}</text>
+      </block>
     </scroll-view>
-    <view class="btn primary wide" hover-class="btn-hover" bindtap="onRules">知道了</view>
+    <view class="btn primary wide" hover-class="btn-hover" bindtap="onRules">{{t.gotIt}}</view>
   </view>
 </view>

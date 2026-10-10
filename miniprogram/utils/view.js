@@ -1,11 +1,11 @@
 /**
- * 把引擎状态转换成 WXML 好渲染的视图模型（纯函数，不依赖 wx）。
+ * 把引擎状态转换成 WXML 好渲染的视图模型（不依赖 wx；文案按 i18n 当前语言生成）。
  */
 
+const i18n = require('./i18n');
 const {
   ALL_TOKENS,
   COLORS,
-  COLOR_NAMES,
   MAX_RESERVED,
   MAX_TOKENS,
   bonus,
@@ -49,7 +49,7 @@ function cardView(card, player) {
 function nobleView(noble) {
   return {
     id: noble.id,
-    name: noble.title || noble.name,
+    name: i18n.dict().noble[noble.id] || noble.name,
     points: noble.points,
     req: costList(noble.requirement),
   };
@@ -85,7 +85,7 @@ function paymentPlan(player, card) {
     const rest = cost - byBonus - byTokens;
     const byGold = Math.min(rest, gold);
     gold -= byGold;
-    return { color: c, name: COLOR_NAMES[c], cost, byBonus, byTokens, byGold, short: rest - byGold };
+    return { color: c, name: i18n.dict().color[c], cost, byBonus, byTokens, byGold, short: rest - byGold };
   });
   return { rows, short: rows.reduce((n, r) => n + r.short, 0) };
 }
@@ -117,7 +117,7 @@ function buildView(game, viewer, ui) {
 
   const bank = ALL_TOKENS.map((c) => ({
     color: c,
-    name: COLOR_NAMES[c],
+    name: i18n.dict().color[c],
     count: s.tokens[c],
     picked: picks[c] || 0,
   }));
@@ -129,12 +129,25 @@ function buildView(game, viewer, ui) {
   // 每列：上方永久加成（发展卡数），下方手中代币；黄金没有加成
   meView.slots = ALL_TOKENS.map((c) => ({
     color: c,
-    name: COLOR_NAMES[c],
+    name: i18n.dict().color[c],
     n: me.tokens[c],
     bonus: c === 'gold' ? -1 : bonus(me, c),
   }));
 
-  const last = s.log.length ? s.log[s.log.length - 1].text : '';
+  const t = i18n.t;
+  if (s.phase === 'discard' && activeHuman) meView.sub = t('fmt.meDiscard');
+  else if (activeHuman) meView.sub = t('ui.yourTurn');
+  else meView.sub = game.isOver ? t('fmt.meOver') : t('fmt.meWaiting');
+  meView.holding = t('fmt.holding', meView.tokenTotal);
+
+  const opponents = s.players
+    .map((p, i) => playerView(game, p, i))
+    .filter((p) => p.index !== viewer)
+    .map((p) => {
+      if (p.isCurrent) p.sub = p.isAI ? t('fmt.thinking') : t('fmt.inTurn');
+      else p.sub = t('fmt.oppSub', p.reservedCount, p.tokenTotal);
+      return p;
+    });
 
   return {
     phase: s.phase,
@@ -151,24 +164,28 @@ function buildView(game, viewer, ui) {
     tiers,
     nobles: s.nobles.map(nobleView),
     players: s.players.map((p, i) => playerView(game, p, i)),
-    opponents: s.players.map((p, i) => playerView(game, p, i)).filter((p) => p.index !== viewer),
+    opponents,
     me: meView,
-    lastLog: last,
+    lastLog: i18n.logText(s.log[s.log.length - 1]),
+    roundLabel: t('fmt.round', s.round),
+    waitingLabel: cur.isAI ? t('fmt.botThinking', cur.name) : t('fmt.waitingFor', cur.name),
+    discardLabel: t('fmt.discardBar', game.discardNeeded),
   };
 }
 
-/** 根据当前选中的代币判断能否确认拿取，返回 {ok, kind, colors, hint}。 */
+/** 根据当前选中的矿石判断能否确认拿取，返回 {ok, kind, colors, hint}。 */
 function evaluatePicks(game, picks) {
+  const L = i18n.dict();
   const colors = Object.keys(picks).filter((c) => picks[c] > 0);
   const total = colors.reduce((s, c) => s + picks[c], 0);
   if (!total) return { ok: false, hint: '' };
   if (colors.length === 1 && picks[colors[0]] === 2) {
-    return { ok: true, kind: 'two', colors, hint: `拿 2 枚${COLOR_NAMES[colors[0]]}` };
+    return { ok: true, kind: 'two', colors, hint: i18n.t('fmt.pickTwo', L.color[colors[0]]) };
   }
   const need = game.requiredDistinct();
-  const names = colors.map((c) => COLOR_NAMES[c]).join(' ');
-  if (colors.length === need) return { ok: true, kind: 'three', colors, hint: `拿 ${names}` };
-  return { ok: false, colors, hint: `已选 ${names}，还需 ${need - colors.length} 种` };
+  const names = colors.map((c) => L.color[c]).join(L.sep);
+  if (colors.length === need) return { ok: true, kind: 'three', colors, hint: i18n.t('fmt.pickOk', names) };
+  return { ok: false, colors, hint: i18n.t('fmt.pickNeed', names, need - colors.length) };
 }
 
 /**
@@ -181,8 +198,8 @@ function evaluatePicks(game, picks) {
 function togglePick(game, picks, color) {
   const next = Object.assign({}, picks);
   const chosen = Object.keys(next).filter((c) => next[c] > 0);
-  if (color === 'gold') return { error: '黄金只能通过预留卡牌获得' };
-  if (game.state.tokens[color] <= 0) return { error: `${COLOR_NAMES[color]}色矿石已经拿完了` };
+  if (color === 'gold') return { error: i18n.errText('gold') };
+  if (game.state.tokens[color] <= 0) return { error: i18n.errText({ code: 'empty', params: { color } }) };
 
   if (next[color]) {
     if (chosen.length === 1 && next[color] === 1 && game.canTakeTwo(color)) {
@@ -193,9 +210,9 @@ function togglePick(game, picks, color) {
     return { picks: next };
   }
   if (chosen.some((c) => next[c] === 2)) {
-    return { error: '拿 2 枚同色时不能再拿其他颜色' };
+    return { error: i18n.errText('twoOnly') };
   }
-  if (chosen.length >= 3) return { error: '最多拿 3 种不同颜色' };
+  if (chosen.length >= 3) return { error: i18n.errText('maxThree') };
   next[color] = 1;
   return { picks: next };
 }

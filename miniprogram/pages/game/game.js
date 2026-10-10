@@ -1,5 +1,6 @@
-const { COLOR_NAMES, Game, MAX_RESERVED } = require('../../engine/game');
+const { Game, MAX_RESERVED } = require('../../engine/game');
 const ai = require('../../engine/ai');
+const i18n = require('../../utils/i18n');
 const storage = require('../../utils/storage');
 const {
   avatarChar,
@@ -12,14 +13,11 @@ const {
 
 const AI_DELAY = 900; // 电脑每步的停顿（毫秒），方便看清
 const TIER_LABELS = { 1: 'Ⅰ', 2: 'Ⅱ', 3: 'Ⅲ' };
-const ORE_NAMES = {
-  white: '石英',
-  blue: '青金石',
-  green: '孔雀石',
-  red: '朱砂',
-  black: '黑曜石',
-};
-const TIER_NAMES = { 1: '矿脉', 2: '商路', 3: '城邦' };
+const t = i18n.t;
+
+function toast(title) {
+  wx.showToast({ title, icon: 'none' });
+}
 
 Page({
   data: {
@@ -33,10 +31,12 @@ Page({
     logs: [],
     result: null,
     tierLabels: TIER_LABELS,
+    t: {}, // 当前语言的静态文案
   },
 
   // ------------------------------------------------------------ 生命周期
   onLoad(options) {
+    this.applyLang();
     let game = null;
     if (options && options.resume) {
       const state = storage.loadGame();
@@ -48,7 +48,7 @@ Page({
       if (seats) game = Game.create(seats);
     }
     if (!game) {
-      wx.showToast({ title: '没有可继续的对局', icon: 'none' });
+      toast(t('fmt.noSave'));
       setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 800);
       return;
     }
@@ -56,6 +56,8 @@ Page({
   },
 
   onShow() {
+    // 语言可能在首页被切换过
+    if (this.data.t.lang !== i18n.getLang()) this.applyLang();
     if (this.game) this.schedule();
   },
 
@@ -68,7 +70,33 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '来一局《矿石》吧！', path: '/pages/index/index' };
+    return { title: t('fmt.share'), path: '/pages/index/index' };
+  },
+
+  /** 刷新当前语言的文案；对局记录、弹层都会跟着切换。 */
+  applyLang() {
+    this.setData({ t: i18n.ui() });
+    wx.setNavigationBarTitle && wx.setNavigationBarTitle({ title: t('appName') });
+    if (!this.game) return;
+    this.render();
+    if (this.data.handoff) this.setData({ handoff: this.handoffView(this.game.current.name) });
+    if (this.data.result) this.showResult();
+    if (this.data.showLog) this.onShowLog();
+    this.setData({ sheet: null, playerSheet: null });
+  },
+
+  onToggleLang() {
+    i18n.setLang(i18n.getLang() === 'zh' ? 'en' : 'zh');
+    this.applyLang();
+  },
+
+  handoffView(name) {
+    return {
+      name,
+      title: t('fmt.handoffTitle', name),
+      sub: t('fmt.handoffSub', name),
+      btn: t('fmt.handoffBtn', name),
+    };
   },
 
   // ---------------------------------------------------------------- 核心
@@ -135,7 +163,7 @@ Page({
       return;
     }
     if (this.locked()) {
-      this.setData({ handoff: { name: cur.name } });
+      this.setData({ handoff: this.handoffView(cur.name) });
     }
   },
 
@@ -145,7 +173,7 @@ Page({
       fn();
     } catch (e) {
       if (e && e.name === 'IllegalMove') {
-        wx.showToast({ title: e.message, icon: 'none' });
+        toast(i18n.errText(e));
         return false;
       }
       throw e;
@@ -161,7 +189,7 @@ Page({
     const v = this.data.view;
     if (v && v.myTurn) return true;
     if (v && v.phase !== 'over') {
-      wx.showToast({ title: `现在是 ${v.currentName} 的回合`, icon: 'none' });
+      toast(t('fmt.notYourTurn', v.currentName));
     }
     return false;
   },
@@ -170,12 +198,12 @@ Page({
   onTapBank(e) {
     if (!this.ensureMyTurn()) return;
     if (this.data.view.phase === 'discard') {
-      wx.showToast({ title: '请先点击你自己的矿石弃回', icon: 'none' });
+      toast(t('fmt.discardFirst'));
       return;
     }
     const res = togglePick(this.game, this.data.picks, e.currentTarget.dataset.color);
     if (res.error) {
-      wx.showToast({ title: res.error, icon: 'none' });
+      toast(res.error);
       return;
     }
     this.setData({ picks: res.picks });
@@ -190,7 +218,7 @@ Page({
   onConfirmTake() {
     const ev = evaluatePicks(this.game, this.data.picks);
     if (!ev.ok) {
-      if (ev.hint) wx.showToast({ title: ev.hint, icon: 'none' });
+      if (ev.hint) toast(ev.hint);
       return;
     }
     this.act(() => {
@@ -209,14 +237,15 @@ Page({
 
     const myTurn = this.data.view.myTurn && this.data.view.phase === 'play';
     const card = cardView(raw, viewer);
-    // 每种颜色怎么付：加成 / 代币 / 黄金 / 仍缺
+    // 每种矿石怎么付：加成 / 手中 / 黄金 / 仍缺
     const plan = paymentPlan(viewer, raw);
     let tip = '';
     if (card.affordable) {
-      tip = card.goldNeeded ? `买得起 · 需动用 ${card.goldNeeded} 枚黄金` : '买得起';
+      tip = card.goldNeeded ? t('fmt.affordableGold', card.goldNeeded) : t('fmt.affordable');
     } else {
-      tip = `还差 ${plan.short} 份矿石`;
+      tip = t('fmt.short', plan.short);
     }
+    const L = i18n.dict();
     const canReserve = source === 'board' && viewer.reserved.length < MAX_RESERVED;
     this.setData({
       sheet: {
@@ -227,13 +256,13 @@ Page({
         tip,
         ok: card.affordable,
         plan: plan.rows,
-        title: `${ORE_NAMES[raw.bonus]} · ${TIER_NAMES[raw.tier]}`,
-        desc: `永久 +1 ${COLOR_NAMES[raw.bonus]}${raw.points ? ` · ${raw.points} 声望` : ' · 无声望'}`,
+        title: t('fmt.cardTitle', L.ore[raw.bonus], L.tier[raw.tier]),
+        desc: t('fmt.cardDesc', L.color[raw.bonus], raw.points),
         showBuy: myTurn,
         canBuy: myTurn && card.affordable,
         showReserve: myTurn && source === 'board',
         canReserve: myTurn && canReserve,
-        goldGain: g.state.tokens.gold > 0,
+        note: g.state.tokens.gold > 0 ? t('fmt.reserveGold') : t('fmt.reserveNoGold'),
       },
     });
   },
@@ -244,7 +273,7 @@ Page({
     const tier = Number(e.currentTarget.dataset.tier);
     const left = this.game.state.decks[tier - 1].length;
     if (!left) {
-      wx.showToast({ title: '这层牌堆已经空了', icon: 'none' });
+      toast(t('fmt.deckEmpty'));
       return;
     }
     this.setData({
@@ -253,13 +282,13 @@ Page({
         tier,
         tierLabel: TIER_LABELS[tier],
         left,
-        title: `${TIER_NAMES[tier]}牌堆 · 剩 ${left} 张`,
-        desc: '从牌堆顶盲抽一张，放入你的预留区',
-        tip: this.game.canReserve() ? '' : `最多预留 ${MAX_RESERVED} 张`,
+        title: t('fmt.deckTitle', i18n.dict().tier[tier], left),
+        desc: t('fmt.deckDesc'),
+        tip: this.game.canReserve() ? '' : t('fmt.reserveMax', MAX_RESERVED),
         showBuy: false,
         showReserve: true,
         canReserve: this.game.canReserve(),
-        goldGain: this.game.state.tokens.gold > 0,
+        note: this.game.state.tokens.gold > 0 ? t('fmt.reserveGold') : t('fmt.reserveNoGold'),
       },
     });
   },
@@ -286,7 +315,9 @@ Page({
   onTapPlayer(e) {
     const i = Number(e.currentTarget.dataset.index);
     const p = this.data.view.players[i];
-    if (p) this.setData({ playerSheet: p });
+    if (p) {
+      this.setData({ playerSheet: Object.assign({}, p, { sub: t('fmt.playerSub', p.isAI, p.cardCount, p.tokenTotal) }) });
+    }
   },
 
   onClosePlayer() {
@@ -315,7 +346,7 @@ Page({
     const logs = this.game.state.log
       .slice()
       .reverse()
-      .map((l, i) => ({ key: i, round: l.round, text: l.text }));
+      .map((l, i) => ({ key: i, round: l.round, text: i18n.logText(l) }));
     this.setData({ showLog: true, logs });
   },
 
@@ -336,9 +367,13 @@ Page({
         isAI: p.isAI,
         initial: avatarChar(r.name),
         hue: r.index % 4,
+        detail: t('fmt.rankDetail', r.cards, p.nobles.length),
       };
     });
-    this.setData({ result: { rank, rounds: g.state.round - 1 } });
+    const rounds = g.state.round - 1;
+    this.setData({
+      result: { rank, rounds, title: t('fmt.resultTitle', rank[0].name), sub: t('fmt.resultRounds', rounds) },
+    });
   },
 
   onCloseResult() {

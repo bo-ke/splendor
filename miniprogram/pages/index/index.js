@@ -1,34 +1,53 @@
+const i18n = require('../../utils/i18n');
 const storage = require('../../utils/storage');
 
-const AI_NAMES = ['电脑·甲', '电脑·乙', '电脑·丙'];
+const t = i18n.t;
+
+/** 座位 i 的默认名（按当前语言）：0 号是“我”，其余真人是“玩家N”，电脑依次是甲乙丙。 */
+function defaultName(i, isAI) {
+  const L = i18n.dict();
+  if (isAI) return L.botNames[Math.max(0, i - 1)];
+  return i === 0 ? L.me : t('fmt.playerN', i + 1);
+}
 
 function defaultSeats() {
-  return [
-    { name: '我', isAI: false },
-    { name: AI_NAMES[0], isAI: true },
-    { name: AI_NAMES[1], isAI: true },
-    { name: AI_NAMES[2], isAI: true },
-  ];
+  return [0, 1, 2, 3].map((i) => ({ name: defaultName(i, i > 0), isAI: i > 0 }));
 }
 
 Page({
   data: {
     count: 3,
-    seats: defaultSeats(),
+    seats: [],
     hasSave: false,
     showRules: false,
     ores: ['white', 'blue', 'green', 'red', 'black'],
+    t: {},
   },
 
   onLoad() {
     const saved = storage.loadSetup();
-    if (saved && saved.seats && saved.seats.length === 4) {
-      this.setData({ seats: saved.seats, count: saved.count });
-    }
+    const seats = saved && saved.seats && saved.seats.length === 4 ? saved.seats : defaultSeats();
+    this.setData({ seats, count: saved && saved.count ? saved.count : 3 });
+    this.applyLang();
   },
 
   onShow() {
+    if (this.data.t.lang !== i18n.getLang()) this.applyLang();
     this.setData({ hasSave: !!storage.loadGame() });
+  },
+
+  applyLang() {
+    // 仍是默认名的座位随语言一起换掉，用户自己起的名字保持不变
+    const seats = this.data.seats.map((s, i) =>
+      i18n.isDefaultName(s.name) ? { name: defaultName(i, s.isAI), isAI: s.isAI } : s
+    );
+    this.setData({ t: i18n.ui(), seats });
+    wx.setNavigationBarTitle && wx.setNavigationBarTitle({ title: t('appName') });
+  },
+
+  onToggleLang() {
+    i18n.setLang(i18n.getLang() === 'zh' ? 'en' : 'zh');
+    this.applyLang();
   },
 
   onCount(e) {
@@ -39,10 +58,8 @@ Page({
     const i = Number(e.currentTarget.dataset.i);
     const seat = this.data.seats[i];
     const isAI = !seat.isAI;
-    let name = seat.name;
     // 切换类型时，若还是默认名就顺手换掉
-    if (isAI && (name === '我' || /^玩家\d$/.test(name))) name = AI_NAMES[Math.max(0, i - 1)];
-    if (!isAI && AI_NAMES.indexOf(name) >= 0) name = i === 0 ? '我' : `玩家${i + 1}`;
+    const name = i18n.isDefaultName(seat.name) ? defaultName(i, isAI) : seat.name;
     this.setData({ [`seats[${i}]`]: { name, isAI } });
   },
 
@@ -53,12 +70,12 @@ Page({
 
   onStart() {
     const seats = this.data.seats.slice(0, this.data.count).map((s, i) => ({
-      name: (s.name || '').trim() || (s.isAI ? AI_NAMES[0] : `玩家${i + 1}`),
+      name: (s.name || '').trim() || defaultName(i, s.isAI),
       isAI: s.isAI,
     }));
     const names = seats.map((s) => s.name);
     if (new Set(names).size !== names.length) {
-      wx.showToast({ title: '玩家名不能重复', icon: 'none' });
+      wx.showToast({ title: t('fmt.dupNames'), icon: 'none' });
       return;
     }
     const start = () => {
@@ -69,9 +86,10 @@ Page({
     };
     if (this.data.hasSave) {
       wx.showModal({
-        title: '开始新游戏？',
-        content: '当前未完成的对局将被覆盖。',
-        confirmText: '开新局',
+        title: t('fmt.newGameTitle'),
+        content: t('fmt.newGameBody'),
+        confirmText: t('fmt.newGameOk'),
+        cancelText: t('fmt.newGameCancel'),
         success: (res) => res.confirm && start(),
       });
     } else {
@@ -90,6 +108,6 @@ Page({
   noop() {},
 
   onShareAppMessage() {
-    return { title: '来一局《矿石》吧！', path: '/pages/index/index' };
+    return { title: t('fmt.share'), path: '/pages/index/index' };
   },
 });

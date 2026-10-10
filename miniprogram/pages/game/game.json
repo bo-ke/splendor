@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "矿石",
+  "navigationBarTitleText": "矿石商人",
   "usingComponents": {
     "card": "/components/card/card",
     "noble": "/components/noble/noble"

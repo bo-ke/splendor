@@ -27,7 +27,11 @@ function makeEnv() {
     navigateTo: (o) => env.nav.push(o.url),
     navigateBack: () => env.nav.push('back'),
     reLaunch: (o) => env.nav.push(o.url),
+    setNavigationBarTitle: (o) => (env.navTitle = o.title),
+    getAppBaseInfo: () => ({ language: env.sysLang || 'zh_CN' }),
   };
+  // 每个用例从中文开始；需要英文的用例自己切换
+  require(path.join(ROOT, 'utils/i18n.js')).setLang('zh');
   global.getApp = () => ({ globalData: env.globalData });
   global.getCurrentPages = () => env.pages;
   global.Page = (opts) => (env.lastPage = opts);
@@ -173,7 +177,7 @@ test('对局页：1 真人 vs 2 电脑，用页面交互打完整局', () => {
     assert.deepEqual(page.data.picks, { red: 2 });
     assert.ok(page.data.pickEval.ok);
     page.onTapBank(ev({ color: 'blue' }));
-    assert.equal(env.toasts.pop(), '拿 2 枚同色时不能再拿其他颜色');
+    assert.equal(env.toasts.pop(), '拿 2 份同种时不能再拿其他矿石');
     page.onClearPicks();
     assert.deepEqual(page.data.picks, {});
 
@@ -207,12 +211,13 @@ test('对局页：同屏 2 真人 + 1 电脑，轮到真人时出现交接遮罩
     ];
     const page = loadPage(env, 'pages/game/game.js');
     page.onLoad({});
-    assert.deepEqual(page.data.handoff, { name: 'A' });
+    assert.equal(page.data.handoff.name, 'A');
+    assert.equal(page.data.handoff.title, '轮到 A');
     assert.equal(page.data.view.myTurn, false, '确认前不能操作');
     page.onHandoffReady();
     assert.equal(page.data.view.myTurn, true);
     humanMove(page);
-    assert.deepEqual(page.data.handoff, { name: 'B' });
+    assert.equal(page.data.handoff.name, 'B');
     assert.equal(page.data.view.me.name, 'A', '交接前仍显示上一位的面板');
     page.onHandoffReady();
     assert.equal(page.data.view.me.name, 'B');
@@ -268,6 +273,83 @@ test('对局页：没有存档时“继续”会回到首页', () => {
     assert.equal(env.toasts.pop(), '没有可继续的对局');
     env.flush();
     assert.deepEqual(env.nav, ['/pages/index/index']);
+  } finally {
+    env.restore();
+  }
+});
+
+test('双语：英文整局 + 对局中切换语言，记录与文案随之变化', () => {
+  const env = makeEnv();
+  try {
+    const i18n = require(path.join(ROOT, 'utils/i18n.js'));
+    i18n.setLang('en');
+    const idx = loadPage(env, 'pages/index/index.js');
+    idx.onLoad();
+    idx.onShow();
+    assert.equal(idx.data.t.start, 'New Game');
+    assert.equal(env.navTitle, 'Ore Merchant');
+    assert.deepEqual(
+      idx.data.seats.map((x) => x.name),
+      ['Me', 'Bot·A', 'Bot·B', 'Bot·C']
+    );
+    // 切到中文：默认名跟着换，自己起的名字不变
+    idx.onName(ev({ i: 1 }, { value: 'Alice' }));
+    idx.onToggleLang();
+    assert.equal(i18n.getLang(), 'zh');
+    assert.deepEqual(
+      idx.data.seats.map((x) => x.name),
+      ['我', 'Alice', '电脑·乙', '电脑·丙']
+    );
+    assert.equal(env.navTitle, '矿石商人');
+    idx.onToggleLang();
+
+    env.globalData.pendingSeats = [
+      { name: 'Me', isAI: false },
+      { name: 'Bot·A', isAI: true },
+    ];
+    const page = loadPage(env, 'pages/game/game.js');
+    page.onLoad({});
+    assert.equal(page.data.view.roundLabel, 'Round 1');
+    assert.match(page.data.view.lastLog, /^2 players\. First to 15/);
+    page.onTapBank(ev({ color: 'gold' }));
+    assert.equal(env.toasts.pop(), 'Gold can only be gained by reserving');
+    humanMove(page);
+    assert.match(page.data.view.lastLog, /^Me (took|bought|reserved)/);
+    env.flush();
+    assert.match(page.data.view.lastLog, /^Bot·A /);
+
+    // 对局中切回中文：同一份记录重新翻译
+    page.onToggleLang();
+    assert.equal(page.data.t.take, '拿取');
+    assert.match(page.data.view.roundLabel, /^第 \d+ 轮$/);
+    assert.match(page.data.view.lastLog, /^电脑·甲|^Bot·A /);
+    page.onShowLog();
+    assert.match(page.data.logs[page.data.logs.length - 1].text, /^开局：2 名玩家/);
+    page.onToggleLang();
+    page.onShowLog();
+    assert.match(page.data.logs[page.data.logs.length - 1].text, /^2 players/);
+    page.onCloseLog();
+
+    assert.ok(playOut(env, page));
+    assert.match(page.data.result.title, / wins$/);
+    assert.match(page.data.result.rank[0].detail, /cards · \d+ nobles?$/);
+  } finally {
+    env.restore();
+  }
+});
+
+test('双语：未设置偏好时跟随系统语言', () => {
+  const env = makeEnv();
+  try {
+    const i18n = require(path.join(ROOT, 'utils/i18n.js'));
+    delete env.storage['ore.lang'];
+    env.sysLang = 'en-US';
+    assert.equal(i18n.init(), 'en');
+    env.sysLang = 'zh_TW';
+    assert.equal(i18n.init(), 'zh');
+    i18n.setLang('en');
+    env.sysLang = 'zh_CN';
+    assert.equal(i18n.init(), 'en', '用户选过的语言优先');
   } finally {
     env.restore();
   }
